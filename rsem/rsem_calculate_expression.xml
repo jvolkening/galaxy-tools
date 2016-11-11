@@ -13,7 +13,7 @@
     ## Basic Options
 
     --strandedness $basic.strandedness
-    $append_names
+    $basic.append_names
 
     #if $basic.seed:
       --seed $basic.seed
@@ -51,12 +51,12 @@
       --num-rspd-bins $advanced.rspd.bins
     #end if
 
-    # Gibbs
+    ## Gibbs
     --gibbs-burnin $advanced.gibbs.burnin
     --gibbs-number-of-samples $advanced.gibbs.samples
     --gibbs-sampling-gap $advanced.gibbs.gap
 
-    # Library parameters
+    ## Library parameters
 
     --fragment-length-min  $advanced.library.min
     --fragment-length-max  $advanced.library.max
@@ -177,6 +177,7 @@
         <option value="forward">forward</option>
         <option value="reverse">reverse</option>
       </param>
+      <param name="append_names" type="boolean" truevalue="--append-names" falsevalue="" checked="false" label="Append gene/transcript names (if available) to IDs in output" />
       <param name="seed" type="integer" optional="true" min="0" max="4294967295" label="Seed for RNG" help="Set the seed for the random number generators used in calculating posterior mean estimates and credibility intervals.  The seed must be a non-negative 32 bit integer." />
       <param name="single_cell_prior" type="boolean" truevalue="--single-cell-prior" falsevalue="" checked="false" label="Use single-cell prior" />
       <param name="calc_pme" type="boolean" truevalue="--calc-pme" falsevalue="" checked="false" label="Calculate posterior mean estimates" />
