@@ -1,14 +1,18 @@
 <tool id="rsem_calculate_expression" name="RSEM calculate expression" version="1.3.0">
   <description>RNA-Seq by Expectation-Maximization</description>
+  <version_command>rsem-calculate-expression --version | sed  's/Current version: RSEM v//'</version_command>
   <stdio>
     <exit_code range="1:"  level="fatal" description="Error Running RSEM" />
   </stdio>
   <command><![CDATA[
+
+    RSEM_TMP=`mktemp -d` &&
+
     rsem-calculate-expression 
 
     --num-threads "\${GALAXY_SLOTS:-1}"
     --star
-    --temporary-folder /tmp/rsem
+    --temporary-folder \$RSEM_TMP
 
     ## Basic Options
 
@@ -46,7 +50,7 @@
     #end if
 
     ## RSPD
-    #if $advanced.rspd.estimate == 'yes':
+    #if $advanced.rspd.estimate:
       --estimate-rspd
       --num-rspd-bins $advanced.rspd.bins
     #end if
@@ -194,7 +198,7 @@
 
     <section name="output" title="Output" expanded="false">
       <param name="bam" type="select" label="Create bam results files" 
-             help="In addition to the transcript-coordinate-based BAM file output, also output a BAM file with the read alignments in genomic coordinates" >
+             help="Choose to output one or both of transcript-coordinate-based BAM alignments and genomic-coordinate-based alignments" >
         <option value="none" selected="true">No BAM results files</option>
         <option value="transcripts">Transcript BAM results file</option>
         <option value="both">Transcript and genome BAM results files</option>
@@ -234,6 +238,7 @@
     </data>
     <data format="bam" name="transcript_sorted_bam" label="transcript.sorted.bam" from_work_dir="rsem_output.transcript.sorted.bam" >
       <filter>output['bam'] != "none"</filter>
+      <filter>output['sort_bam_by_coord']</filter>
     </data>
     <data format="bam" name="genome_bam" label="genome.bam" from_work_dir="rsem_output.genome.bam">
       <filter>output['bam'] == "both"</filter>
@@ -241,10 +246,345 @@
     <data format="bam" name="genome_sorted_bam" label="genome.sorted.bam" from_work_dir="rsem_output.genome.sorted.bam">
       <filter>output['bam'] == "both"</filter>
     </data>
-    <data format="txt" name="log" label="rsem_log"/>
   </outputs>
   <tests>
   </tests>
-  <help>
-  </help> 
+  <help><![CDATA[
+
+NAME
+    rsem-calculate-expression
+
+PURPOSE
+    Estimate gene and isoform expression from RNA-Seq data.
+
+SYNOPSIS
+     rsem-calculate-expression [options] upstream_read_file(s) reference_name sample_name 
+     rsem-calculate-expression [options] --paired-end upstream_read_file(s) downstream_read_file(s) reference_name sample_name 
+     rsem-calculate-expression [options] --alignments [--paired-end] input reference_name sample_name
+
+ARGUMENTS
+    upstream_read_files(s)
+        Comma-separated list of files containing single-end reads or upstream
+        reads for paired-end data. By default, these files are assumed to be
+        in FASTQ format. If the --no-qualities option is specified, then FASTA
+        format is expected.
+
+    downstream_read_file(s)
+        Comma-separated list of files containing downstream reads which are
+        paired with the upstream reads. By default, these files are assumed to
+        be in FASTQ format. If the --no-qualities option is specified, then
+        FASTA format is expected.
+
+    input
+        SAM/BAM/CRAM formatted input file. If "-" is specified for the
+        filename, the input is instead assumed to come from standard input.
+        RSEM requires all alignments of the same read group together. For
+        paired-end reads, RSEM also requires the two mates of any alignment be
+        adjacent. In addition, RSEM does not allow the SEQ and QUAL fields to
+        be empty. See Description section for how to make input file obey
+        RSEM's requirements.
+
+    reference_name
+        The name of the reference used. The user must have run
+        'rsem-prepare-reference' with this reference_name before running this
+        program.
+
+    sample_name
+        The name of the sample analyzed. All output files are prefixed by this
+        name (e.g., sample_name.genes.results)
+
+
+BASIC OPTIONS
+    --paired-end
+        Input reads are paired-end reads. (Default: off)
+
+    --no-qualities
+        Input reads do not contain quality scores. (Default: off)
+
+    --strandedness <none|forward|reverse>
+        This option defines the strandedness of the RNA-Seq reads. It
+        recognizes three values: 'none', 'forward', and 'reverse'. 'none'
+        refers to non-strand-specific protocols. 'forward' means all
+        (upstream) reads are derived from the forward strand. 'reverse' means
+        all (upstream) reads are derived from the reverse strand. If
+        'forward'/'reverse' is set, the '--norc'/'--nofw' Bowtie/Bowtie 2
+        option will also be enabled to avoid aligning reads to the opposite
+        strand. For Illumina TruSeq Stranded protocols, please use 'reverse'.
+        (Default: 'none')
+
+    -p/--num-threads <int>
+        Number of threads to use. Both Bowtie/Bowtie2, expression estimation
+        and 'samtools sort' will use this many threads. (Default: 1)
+
+    --alignments
+        Input file contains alignments in SAM/BAM/CRAM format. The exact file
+        format will be determined automatically. (Default: off)
+
+    --fai <file>
+        If the header section of input alignment file does not contain
+        reference sequence information, this option should be turned on.
+        <file> is a FAI format file containing each reference sequence's name
+        and length. Please refer to the SAM official website for the details
+        of FAI format. (Default: off)
+
+    --bowtie2
+        Use Bowtie 2 instead of Bowtie to align reads. Since currently RSEM
+        does not handle indel, local and discordant alignments, the Bowtie2
+        parameters are set in a way to avoid those alignments. In particular,
+        we use options '--sensitive --dpad 0 --gbar 99999999 --mp 1,1 --np 1
+        --score-min L,0,-0.1' by default. The last parameter of '--score-min',
+        '-0.1', is the negative of maximum mismatch rate. This rate can be set
+        by option '--bowtie2-mismatch-rate'. If reads are paired-end, we
+        additionally use options '--no-mixed' and '--no-discordant'. (Default:
+        off)
+
+    --star
+        Use STAR to align reads. Alignment parameters are from ENCODE3's
+        STAR-RSEM pipeline. To save computational time and memory resources,
+        STAR's Output BAM file is unsorted. It is stored in RSEM's temporary
+        directory with name as 'sample_name.bam'. Each STAR job will have its
+        own private copy of the genome in memory. (Default: off)
+
+    --append-names
+        If gene_name/transcript_name is available, append it to the end of
+        gene_id/transcript_id (separated by '_') in files
+        'sample_name.isoforms.results' and 'sample_name.genes.results'.
+        (Default: off)
+
+    --seed <uint32>
+        Set the seed for the random number generators used in calculating
+        posterior mean estimates and credibility intervals. The seed must be a
+        non-negative 32 bit integer. (Default: off)
+
+    --single-cell-prior
+        By default, RSEM uses Dirichlet(1) as the prior to calculate posterior
+        mean estimates and credibility intervals. However, much less genes are
+        expressed in single cell RNA-Seq data. Thus, if you want to compute
+        posterior mean estimates and/or credibility intervals and you have
+        single-cell RNA-Seq data, you are recommended to turn on this option.
+        Then RSEM will use Dirichlet(0.1) as the prior which encourage the
+        sparsity of the expression levels. (Default: off)
+
+    --calc-pme
+        Run RSEM's collapsed Gibbs sampler to calculate posterior mean
+        estimates. (Default: off)
+
+    --calc-ci
+        Calculate 95% credibility intervals and posterior mean estimates. The
+        credibility level can be changed by setting '--ci-credibility-level'.
+        (Default: off)
+
+    -q/--quiet
+        Suppress the output of logging information. (Default: off)
+
+    -h/--help
+        Show help information.
+
+    --version
+        Show version information.
+
+OUTPUT OPTIONS
+    --sort-bam-by-read-name
+        Sort BAM file aligned under transcript coordidate by read name.
+        Setting this option on will produce deterministic maximum likelihood
+        estimations from independent runs. Note that sorting will take long
+        time and lots of memory. (Default: off)
+
+    --no-bam-output
+        Do not output any BAM file. (Default: off)
+
+    --sampling-for-bam
+        When RSEM generates a BAM file, instead of outputting all alignments a
+        read has with their posterior probabilities, one alignment is sampled
+        according to the posterior probabilities. The sampling procedure
+        includes the alignment to the "noise" transcript, which does not
+        appear in the BAM file. Only the sampled alignment has a weight of 1.
+        All other alignments have weight 0. If the "noise" transcript is
+        sampled, all alignments appeared in the BAM file should have weight 0.
+        (Default: off)
+
+    --output-genome-bam
+        Generate a BAM file, 'sample_name.genome.bam', with alignments mapped
+        to genomic coordinates and annotated with their posterior
+        probabilities. In addition, RSEM will call samtools (included in RSEM
+        package) to sort and index the bam file.
+        'sample_name.genome.sorted.bam' and
+        'sample_name.genome.sorted.bam.bai' will be generated. (Default: off)
+
+    --sort-bam-by-coordinate
+        Sort RSEM generated transcript and genome BAM files by coordinates and
+        build associated indices. (Default: off)
+
+    --sort-bam-memory-per-thread <string>
+        Set the maximum memory per thread that can be used by 'samtools sort'.
+        <string> represents the memory and accepts suffices 'K/M/G'. RSEM will
+        pass <string> to the '-m' option of 'samtools sort'. Note that the
+        default used here is different from the default used by samtools.
+        (Default: 1G)
+
+ALIGNER OPTIONS
+    --seed-length <int>
+        Seed length used by the read aligner. Providing the correct value is
+        important for RSEM. If RSEM runs Bowtie, it uses this value for
+        Bowtie's seed length parameter. Any read with its or at least one of
+        its mates' (for paired-end reads) length less than this value will be
+        ignored. If the references are not added poly(A) tails, the minimum
+        allowed value is 5, otherwise, the minimum allowed value is 25. Note
+        that this script will only check if the value >= 5 and give a warning
+        message if the value < 25 but >= 5. (Default: 25)
+
+    --phred33-quals
+        Input quality scores are encoded as Phred+33. (Default: on)
+
+    --phred64-quals
+        Input quality scores are encoded as Phred+64 (default for GA Pipeline
+        ver. >= 1.3). (Default: off)
+
+    --solexa-quals
+        Input quality scores are solexa encoded (from GA Pipeline ver. < 1.3).
+        (Default: off)
+
+    --bowtie-path <path>
+        The path to the Bowtie executables. (Default: the path to the Bowtie
+        executables is assumed to be in the user's PATH environment variable)
+
+    --bowtie-n <int>
+        (Bowtie parameter) max # of mismatches in the seed. (Range: 0-3,
+        Default: 2)
+
+    --bowtie-e <int>
+        (Bowtie parameter) max sum of mismatch quality scores across the
+        alignment. (Default: 99999999)
+
+    --bowtie-m <int>
+        (Bowtie parameter) suppress all alignments for a read if > <int> valid
+        alignments exist. (Default: 200)
+
+    --bowtie-chunkmbs <int>
+        (Bowtie parameter) memory allocated for best first alignment
+        calculation (Default: 0 - use Bowtie's default)
+
+    --bowtie2-path <path>
+        (Bowtie 2 parameter) The path to the Bowtie 2 executables. (Default:
+        the path to the Bowtie 2 executables is assumed to be in the user's
+        PATH environment variable)
+
+    --bowtie2-mismatch-rate <double>
+        (Bowtie 2 parameter) The maximum mismatch rate allowed. (Default: 0.1)
+
+    --bowtie2-k <int>
+        (Bowtie 2 parameter) Find up to <int> alignments per read. (Default:
+        200)
+
+    --bowtie2-sensitivity-level <string>
+        (Bowtie 2 parameter) Set Bowtie 2's preset options in --end-to-end
+        mode. This option controls how hard Bowtie 2 tries to find alignments.
+        <string> must be one of "very_fast", "fast", "sensitive" and
+        "very_sensitive". The four candidates correspond to Bowtie 2's
+        "--very-fast", "--fast", "--sensitive" and "--very-sensitive" options.
+        (Default: "sensitive" - use Bowtie 2's default)
+
+    --star-path <path>
+        The path to STAR's executable. (Default: the path to STAR executable
+        is assumed to be in user's PATH environment variable)
+
+    --star-gzipped-read-file
+        (STAR parameter) Input read file(s) is compressed by gzip. (Default:
+        off)
+
+    --star-bzipped-read-file
+        (STAR parameter) Input read file(s) is compressed by bzip2. (Default:
+        off)
+
+    --star-output-genome-bam
+        (STAR parameter) Save the BAM file from STAR alignment under genomic
+        coordinate to 'sample_name.STAR.genome.bam'. This file is NOT sorted
+        by genomic coordinate. In this file, according to STAR's manual,
+        'paired ends of an alignment are always adjacent, and multiple
+        alignments of a read are adjacent as well'. (Default: off)
+
+
+ADVANCED OPTIONS
+    --tag <string>
+        The name of the optional field used in the SAM input for identifying a
+        read with too many valid alignments. The field should have the format
+        <tagName>:i:<value>, where a <value> bigger than 0 indicates a read
+        with too many alignments. (Default: "")
+
+    --fragment-length-min <int>
+        Minimum read/insert length allowed. This is also the value for the
+        Bowtie/Bowtie2 -I option. (Default: 1)
+
+    --fragment-length-max <int>
+        Maximum read/insert length allowed. This is also the value for the
+        Bowtie/Bowtie 2 -X option. (Default: 1000)
+
+    --fragment-length-mean <double>
+        (single-end data only) The mean of the fragment length distribution,
+        which is assumed to be a Gaussian. (Default: -1, which disables use of
+        the fragment length distribution)
+
+    --fragment-length-sd <double>
+        (single-end data only) The standard deviation of the fragment length
+        distribution, which is assumed to be a Gaussian. (Default: 0, which
+        assumes that all fragments are of the same length, given by the
+        rounded value of --fragment-length-mean)
+
+    --estimate-rspd
+        Set this option if you want to estimate the read start position
+        distribution (RSPD) from data. Otherwise, RSEM will use a uniform
+        RSPD. (Default: off)
+
+    --num-rspd-bins <int>
+        Number of bins in the RSPD. Only relevant when '--estimate-rspd' is
+        specified. Use of the default setting is recommended. (Default: 20)
+
+    --gibbs-burnin <int>
+        The number of burn-in rounds for RSEM's Gibbs sampler. Each round
+        passes over the entire data set once. If RSEM can use multiple
+        threads, multiple Gibbs samplers will start at the same time and all
+        samplers share the same burn-in number. (Default: 200)
+
+    --gibbs-number-of-samples <int>
+        The total number of count vectors RSEM will collect from its Gibbs
+        samplers. (Default: 1000)
+
+    --gibbs-sampling-gap <int>
+        The number of rounds between two succinct count vectors RSEM collects.
+        If the count vector after round N is collected, the count vector after
+        round N + <int> will also be collected. (Default: 1)
+
+    --ci-credibility-level <double>
+        The credibility level for credibility intervals. (Default: 0.95)
+
+    --ci-memory <int>
+        Maximum size (in memory, MB) of the auxiliary buffer used for
+        computing credibility intervals (CI). (Default: 1024)
+
+    --ci-number-of-samples-per-count-vector <int>
+        The number of read generating probability vectors sampled per sampled
+        count vector. The crebility intervals are calculated by first sampling
+        P(C | D) and then sampling P(Theta | C) for each sampled count vector.
+        This option controls how many Theta vectors are sampled per sampled
+        count vector. (Default: 50)
+
+    --keep-intermediate-files
+        Keep temporary files generated by RSEM. RSEM creates a temporary
+        directory, 'sample_name.temp', into which it puts all intermediate
+        output files. If this directory already exists, RSEM overwrites all
+        files generated by previous RSEM runs inside of it. By default, after
+        RSEM finishes, the temporary directory is deleted. Set this option to
+        prevent the deletion of this directory and the intermediate files
+        inside of it. (Default: off)
+
+    --temporary-folder <string>
+        Set where to put the temporary files generated by RSEM. If the folder
+        specified does not exist, RSEM will try to create it. (Default:
+        sample_name.temp)
+
+    --time
+        Output time consumed by each step of RSEM to 'sample_name.time'.
+        (Default: off)
+
+  ]]></help>
 </tool> 
