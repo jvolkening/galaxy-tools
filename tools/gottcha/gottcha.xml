@@ -13,8 +13,6 @@
 
     gottcha.pl
 
-        # set $fn_db = ${db.fields.path}
-
         --input    '${fn_in}'
         --database '${db.fields.path}'
         --threads  '\${GALAXY_SLOTS:-1}'
@@ -25,7 +23,7 @@
 
         --relAbu   ${general.rel_abund}
         --mode ${general.output_full}
-        $filt_plasmid
+        ${general.filt_plasmid}
 
     ##--Split-trim Options---------------------------
 
@@ -107,15 +105,9 @@
             <param name="output_full" value="no" />
             <param name="min_hits" value="1" />
             <output name="out_tsv" file="test_02.tsv" />
-            <output name="out_log" file="test_02.log" />
+            <output name="out_log" file="test_02.log" compare="sim_size" delta="2000"/>
         </test>
     </tests>
-
-    <!-- ***************************************************************** -->
-    
-    <citations>
-        <citation type="doi">10.1093/nar/gkv180</citation>
-    </citations>
 
     <!-- ***************************************************************** -->
 
@@ -259,4 +251,11 @@ CONTIG_HISTOGRAM(LEN:FREQ)          contig Length Histogram<br> (in the format c
 
     ]]>
     </help>
+
+    <!-- ***************************************************************** -->
+    
+    <citations>
+        <citation type="doi">10.1093/nar/gkv180</citation>
+    </citations>
+
 </tool>
