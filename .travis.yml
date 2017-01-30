@@ -1,16 +1,38 @@
+sudo: false
+language: python
+python: 2.7
 
-# This is a special configuration file to run tests on Travis-CI via
-# GitHub notifications when changes are committed.
-#
-# See http://travis-ci.org/ for details
+before_install:
+  - export GALAXY_REPO=https://github.com/galaxyproject/galaxy
+  - export GALAXY_RELEASE=release_17.01
+  - export PLANEMO_CONDA_PREFIX="$HOME/conda"
 
-# This file is heavily inspired by Peter Cock's efforts. See more details at
-# http://blastedbio.blogspot.com/2013/09/using-travis-ci-for-testing-galaxy-tools.html
-
-# We need Python 2.6 or 2.7 to run Galaxy but many Galaxy tools also need Java
-# to run the simplest way to get that installed is to just start with "java".
-# (which will still have a system python installed).
-language: java
+install:
+  - pip install flake8 planemo
+  - planemo conda_init
+  - export PATH="$PLANEMO_CONDA_PREFIX/bin:$PATH"
+  - conda create -y -q -c bioconda --name iuc_conda samtools=0.1.19 bcftools
+  - . activate iuc_conda
+  - planemo --version
+  - conda --version
+  - git diff --quiet "$TRAVIS_COMMIT_RANGE" -- ; GIT_DIFF_EXIT_CODE=$?
+  - |
+    if [ "$GIT_DIFF_EXIT_CODE" -gt 1 ] ; then
+      git remote set-branches --add origin master;
+      git fetch;
+      TRAVIS_COMMIT_RANGE=origin/master...;
+    fi
+  - echo $TRAVIS_COMMIT_RANGE
+  - |
+      planemo ci_find_repos --exclude_from .tt_blacklist \
+                            --exclude packages --exclude data_managers \
+                            --changed_in_commit_range "$TRAVIS_COMMIT_RANGE" \
+                            --output changed_repositories_chunk.list
+  - cat changed_repositories_chunk.list
 
 script:
- - wget -O- https://raw.github.com/galaxyproject/planemo/master/scripts/travis_test.sh | /bin/bash -x
+  - set -e
+  - cd "$TRAVIS_BUILD_DIR" ##&& flake8 --exclude=.git .
+  - while read -r DIR; do planemo shed_lint --tools --ensure_metadata --urls --report_level warn --fail_level error --recursive "$DIR"; done < changed_repositories_chunk.list
+  - while read -r DIR; do planemo conda_install "$DIR"; done < changed_repositories_chunk.list
+  - while read -r DIR; do planemo test --conda_dependency_resolution --galaxy_branch "$GALAXY_RELEASE" --galaxy_source "$GALAXY_REPO" "$DIR"; done < changed_repositories_chunk.list
