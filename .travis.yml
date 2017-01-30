@@ -1,0 +1,16 @@
+
+# This is a special configuration file to run tests on Travis-CI via
+# GitHub notifications when changes are committed.
+#
+# See http://travis-ci.org/ for details
+
+# This file is heavily inspired by Peter Cock's efforts. See more details at
+# http://blastedbio.blogspot.com/2013/09/using-travis-ci-for-testing-galaxy-tools.html
+
+# We need Python 2.6 or 2.7 to run Galaxy but many Galaxy tools also need Java
+# to run the simplest way to get that installed is to just start with "java".
+# (which will still have a system python installed).
+language: java
+
+script:
+ - wget -O- https://raw.github.com/galaxyproject/planemo/master/scripts/travis_test.sh | /bin/bash -x
