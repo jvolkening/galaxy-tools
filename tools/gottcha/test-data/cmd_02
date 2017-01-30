@@ -1,0 +1,1 @@
+gottcha.pl -i test.fq -d got/db/test_db.species -o foo --minHits 1 --mode summary

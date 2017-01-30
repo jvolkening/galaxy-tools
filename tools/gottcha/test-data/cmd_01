@@ -1,0 +1,1 @@
+gottcha.pl -i test.fq -d got/db/test_db.species -o foo --minHits 1 --minCov 0.00001 --bwaOpt "-k 19 -B 4 -T 0" --mode full

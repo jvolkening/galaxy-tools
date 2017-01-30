@@ -1,0 +1,47 @@
+# gottcha_indices.loc.sample
+# This is a *.loc.sample file distributed with Galaxy that enables tools
+# to use a directory of indexed data files. This one is for GOTTCHA.
+# See the wiki: http://wiki.galaxyproject.org/Admin/NGS%20Local%20Setup
+# First create these data files and save them in your own data directory structure.
+# Then, create a bowtie_indices.loc file to use those indexes with tools.
+# Copy this file, save it with the same name (minus the .sample), 
+# follow the format examples, and store the result in this directory.
+# The file should include an one line entry for each index set.
+# The path points to the "basename" for the set, not a specific file.
+# It has three text columns seperated by TABS.
+#
+# <unique_id>	<display_name>	<file_base_path>
+#
+# So, for example, if you had pre-built indices stored in:
+#
+#    /depot/data2/galaxy/gottcha/
+#
+# containing GOTTCHA index files, such as:
+#   -rw-r--r--  1 root root   21M Sep 15  2015 classLookupByOrder.dmp
+#   -rw-r--r--  1 root root   30M Sep 15  2015 familyLookupByGenus.dmp
+#   -rw-r--r--  1 root root  7.8M Sep 15  2015 genomeVitals.dmp
+#   -rw-r--r--  1 root root   73M Sep 15  2015 genusLookupBySpecies.dmp
+#   -rw-r--r--  1 root root   27M Sep 15  2015 orderLookupByFamily.dmp
+#   -rw-r--r--  1 root root   21M Sep 15  2015 phylumLookupByClass.dmp
+#   -rw-r--r--  1 root root  268M Sep 15  2015 speciesTreeGI.dmp
+#   -rw-r--r--  1 root root  176M Sep 15  2015 taxLookupBySpecies.dmp
+#   -rw-r--r--  1 root root   82M Sep 15  2015 variantSpeciesLookup.dmp
+#   -rw-r--r--  1 root root   16M Sep 15  2015 variantStrainLookup.dmp
+#   -rw-r--r--  1 root root  4.1G Sep 21  2015 GOTTCHA_BACTERIA_c4937_k24_u30_xHUMAN3x.species.bwt
+#   -rw-r--r--  1 root root  1.1G Sep 21  2015 GOTTCHA_BACTERIA_c4937_k24_u30_xHUMAN3x.species.pac
+#   -rw-r--r--  1 root root  2.0G Sep 21  2015 GOTTCHA_BACTERIA_c4937_k24_u30_xHUMAN3x.species.ann
+#   -rw-r--r--  1 root root    22 Sep 21  2015 GOTTCHA_BACTERIA_c4937_k24_u30_xHUMAN3x.species.amb
+#   -rw-r--r--  1 root root  2.1G Sep 21  2015 GOTTCHA_BACTERIA_c4937_k24_u30_xHUMAN3x.species.sa
+#   -rw-r--r--  1 root root   98M Sep 21  2015 GOTTCHA_VIRUSES_c5900_k24_u30_xHUMAN3x.species.bwt
+#   -rw-r--r--  1 root root   25M Sep 21  2015 GOTTCHA_VIRUSES_c5900_k24_u30_xHUMAN3x.species.pac
+#   -rw-r--r--  1 root root   25M Sep 21  2015 GOTTCHA_VIRUSES_c5900_k24_u30_xHUMAN3x.species.ann
+#   -rw-r--r--  1 root root    19 Sep 21  2015 GOTTCHA_VIRUSES_c5900_k24_u30_xHUMAN3x.species.amb
+#   -rw-r--r--  1 root root   49M Sep 21  2015 GOTTCHA_VIRUSES_c5900_k24_u30_xHUMAN3x.species.sa
+#   -rw-r--r--  1 root root   16M Sep 21  2015 GOTTCHA_VIRUSES_c5900_k24_u30_xHUMAN3x.species.parsedGOTTCHA.dmp
+#   -rw-r--r--  1 root root  1.1G Sep 21  2015 GOTTCHA_BACTERIA_c4937_k24_u30_xHUMAN3x.species.parsedGOTTCHA.dmp
+#
+# then the gottcha_indices.loc entries could look like this:
+#
+#bacteria_v20150825	Bacteria	/depot/data2/galaxy/gottcha/GOTTCHA_BACTERIA_c4937_k24_u30_xHUMAN3x.species
+#viruses_v20150825	Viruses	/depot/data2/galaxy/gottcha/GOTTCHA_VIRUSES_c5900_k24_u30_xHUMAN3x.species
+#

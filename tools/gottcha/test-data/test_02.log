@@ -1,0 +1,98 @@
+----> ENTRY HEADER:@FOO:13415:1851
+Threads: 1 (effective)	1 (requested)
+IDX = 0: reading from 0 to 86912
+Staggering at 125000 reads; processed 203 reads
+IDX(0) counted 203 reads
+GLOBAL READ COUNT = 203
+Trim Time: 5 ms
+
+PROGRAM ELAPSED TIME: 6 ms
+[M::bwa_idx_load_from_disk] read 0 ALT contigs
+[M::process] read 1226 sequences (40027 bp)...
+[M::mem_process_seqs] Processed 1226 reads in 0.396 CPU sec, 0.201 real sec
+[main] Version: 0.7.12-r1039
+[main] CMD: bwa mem -k 30 -T 0 -B 100 -O 100 -E 100 -t 2 got/db/test_db.species -
+[main] Real time: 0.206 sec; CPU: 0.400 sec
+
+Parsing foo/test_temp/test_splitrim.stats.txt... found 203 reads (split-trimmed: 1226) and 39924 bases.
+->Retrieving parsed DB from disk [got/db/test_db.species.parsedGOTTCHA.dmp]...done.  0 wallclock secs ( 0.00 usr +  0.00 sys =  0.00 CPU)
+->Parsing SAM file [-] done. Mapped split-trimmed reads: 30; Mapped split-trimmed reads to plasmids: 0; Unmapped split-trimmed reads: 1190; Mapped raw reads: 20; Mapped raw reads to plasmids: 0.  0 wallclock secs ( 0.00 usr +  0.00 sys =  0.00 CPU)
+->Consolidating hits...done.  0 wallclock secs ( 0.00 usr +  0.00 sys =  0.00 CPU)
+->Retrieving Genome Vitals from disk [got/db/genomeVitals.dmp]...done.  0 wallclock secs ( 0.00 usr +  0.00 sys =  0.00 CPU)
+->Storing coordinates to disk [foo/test_temp/test.replicon.contig.coords.csv]...done.  0 wallclock secs ( 0.00 usr +  0.00 sys =  0.00 CPU)
+->Storing datastructure GI coordinates to disk in BINARY format as "foo/test_temp/test.giCoords.dmp"...done. 0 wallsecs
+->Storing datastructure contig length histogram (by entry) to disk in BINARY format as "foo/test_temp/test.replicon.contig.HistoByEntry.dmp"...done. 0 wallsecs
+->Storing datastructure contig length histogram (by GI) to disk in BINARY format as "foo/test_temp/test.replicon.contig.HistoByGI.dmp"...done. 0 wallsecs
+->Storing parseable contig length histogram(s) to disk...done.  0 wallclock secs ( 0.00 usr +  0.00 sys =  0.00 CPU)
+->Calculating non-overlapping coverage from mapping results...done.  0 wallclock secs ( 0.00 usr +  0.00 sys =  0.00 CPU)
+===== REPLICON-level Analysis =====
+->Writing REPLICON-level results to disk [foo/test_temp/test.replicon.tsv]...done.  0 wallclock secs ( 0.00 usr +  0.00 sys =  0.00 CPU)
+===== Extended Taxonomic Rank-level Analysis =====
+->Pulling replicon GIs from DB entries...done.  0 wallclock secs ( 0.00 usr +  0.00 sys =  0.00 CPU)
+->Mapping replicon GIs to source organisms...done.  0 wallclock secs ( 0.00 usr +  0.00 sys =  0.00 CPU)
+->Retrieving Tax Tree from disk [got/db/speciesTreeGI.dmp]...done.  0 wallclock secs ( 0.00 usr +  0.00 sys =  0.00 CPU)
+->Mapping source organism to its tax tree...done.  0 wallclock secs ( 0.00 usr +  0.00 sys =  0.00 CPU)
+  Congratulations! All organisms have been identified!
+->Rolling up results for rank STRAIN [foo/test_temp/test.strain.tsv]...done.  0 wallclock secs ( 0.07 usr +  0.00 sys =  0.07 CPU)
+->Rolling up results for rank SPECIES [foo/test_temp/test.species.tsv]...done.  0 wallclock secs ( 0.03 usr +  0.00 sys =  0.03 CPU)
+->Rolling up results for rank GENUS [foo/test_temp/test.genus.tsv]...done.  0 wallclock secs ( 0.02 usr +  0.00 sys =  0.02 CPU)
+->Rolling up results for rank FAMILY [foo/test_temp/test.family.tsv]...done.  0 wallclock secs ( 0.02 usr +  0.00 sys =  0.02 CPU)
+->Rolling up results for rank ORDER [foo/test_temp/test.order.tsv]...done.  0 wallclock secs ( 0.03 usr +  0.00 sys =  0.03 CPU)
+->Rolling up results for rank CLASS [foo/test_temp/test.class.tsv]...done.  0 wallclock secs ( 0.03 usr +  0.00 sys =  0.03 CPU)
+->Rolling up results for rank PHYLUM [foo/test_temp/test.phylum.tsv]...done.  0 wallclock secs ( 0.02 usr +  0.00 sys =  0.02 CPU)
+Saving updated table to "foo/test_temp/test.strain.tsv.ABU"...done. (2 taxonomie(s), 1 filtered)
+Saving updated table to "foo/test_temp/test.species.tsv.ABU"...done. (2 taxonomie(s), 1 filtered)
+Saving updated table to "foo/test_temp/test.genus.tsv.ABU"...done. (2 taxonomie(s), 1 filtered)
+Saving updated table to "foo/test_temp/test.family.tsv.ABU"...done. (2 taxonomie(s), 1 filtered)
+Saving updated table to "foo/test_temp/test.order.tsv.ABU"...done. (2 taxonomie(s), 1 filtered)
+Saving updated table to "foo/test_temp/test.class.tsv.ABU"...done. (2 taxonomie(s), 1 filtered)
+Saving updated table to "foo/test_temp/test.phylum.tsv.ABU"...done. (2 taxonomie(s), 1 filtered)
+------------------
+TOTAL SCRIPT TIME:	-	 0 wallclock secs ( 0.22 usr +  0.00 sys =  0.22 CPU)
+------------------
+Loading STRAIN Lookup file...done!
+Loading SPECIES Lookup file...done!
+Loading GENUS Lookup file...done!
+Loading FAMILY Lookup file...done!
+Loading ORDER Lookup file...done!
+Loading CLASS Lookup file...done!
+Loading PHYLUM Lookup file...done!
+Loading TAX Lookup file...done!
+Parsing table "foo/test_temp/test.strain.tsv"...Done!
+
+
+STRAIN	LINEAR_LENGTH	TOTAL_BP_MAPPED	HIT_COUNT	HIT_COUNT_PLASMID	READ_COUNT	LINEAR_DOC	NORM_COV
+Newcastle disease virus B1	366	544	18	0	17	1.48633879781421	1
+=================================================================
+
+
+SPECIES	LINEAR_LENGTH	TOTAL_BP_MAPPED	HIT_COUNT	HIT_COUNT_PLASMID	READ_COUNT	LINEAR_DOC	NORM_COV
+Newcastle disease virus	366	544	18	0	17	1.48633879781421	1
+=================================================================
+
+
+GENUS	LINEAR_LENGTH	TOTAL_BP_MAPPED	HIT_COUNT	HIT_COUNT_PLASMID	READ_COUNT	LINEAR_DOC	NORM_COV
+Avulavirus	366	544	18	0	17	1.48633879781421	1
+=================================================================
+
+
+FAMILY	LINEAR_LENGTH	TOTAL_BP_MAPPED	HIT_COUNT	HIT_COUNT_PLASMID	READ_COUNT	LINEAR_DOC	NORM_COV
+Paramyxoviridae	366	544	18	0	17	1.48633879781421	1
+=================================================================
+
+
+ORDER	LINEAR_LENGTH	TOTAL_BP_MAPPED	HIT_COUNT	HIT_COUNT_PLASMID	READ_COUNT	LINEAR_DOC	NORM_COV
+Mononegavirales	366	544	18	0	17	1.48633879781421	1
+=================================================================
+
+
+CLASS	LINEAR_LENGTH	TOTAL_BP_MAPPED	HIT_COUNT	HIT_COUNT_PLASMID	READ_COUNT	LINEAR_DOC	NORM_COV
+Unassigned class - Mononegavirales	366	544	18	0	17	1.48633879781421	1
+=================================================================
+
+
+PHYLUM	LINEAR_LENGTH	TOTAL_BP_MAPPED	HIT_COUNT	HIT_COUNT_PLASMID	READ_COUNT	LINEAR_DOC	NORM_COV
+Unassigned phylum - Unassigned class - Mononegavirales	366	544	18	0	17	1.48633879781421	1
+=================================================================
+Exporting results to disk [foo/test_temp/test.species.tsv.ABUX]...Done!
+Done converting 1 files to list.

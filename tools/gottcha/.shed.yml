@@ -1,0 +1,17 @@
+name: gottcha
+owner: jdv
+description: GOTTCHA - read-based metagenomic taxonomic profiling
+homepage_url: http://lanl-bioinformatics.github.io/GOTTCHA/
+long_description: |
+    GOTTCHA (Genomic Origin Through Taxonomic CHAllenge) is an application of
+    a novel, gene-independent and signature-based metagenomic taxonomic
+    profiling method with significantly smaller false discovery rates (FDR)
+    that is also laptop deployable. Our algorithm was tested and validated on
+    twenty synthetic and mock datasets ranging in community composition and
+    complexity, was applied successfully to data generated from spiked
+    environmental and clinical samples, and robustly demonstrates superior
+    performance compared with other available tools.
+remote_repository_url: https://github.com/jvolkening/galaxy-tools/tree/master/tools/gottcha
+type: unrestricted
+categories:
+- Metagenomics

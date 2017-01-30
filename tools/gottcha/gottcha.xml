@@ -4,28 +4,6 @@
 
     <!-- ***************************************************************** -->
 
-    <macros>
-
-    <!-- Taken from the devteam BWA wrappers  -->
-
-        <token name="@set_reference_fasta_filename@"><![CDATA[
-        #if str( $reference_source.reference_source_selector ) == "history":
-            #set $reference_fasta_filename = "localref.fa"
-            ln -s "${reference_source.ref_file}" "${reference_fasta_filename}" &&
-            bwa index
-            #if str($reference_source.index_a) != 'auto'
-                -a ${reference_source.index_a}
-            #end if
-            "${reference_fasta_filename}" &&
-        #else:
-            #set $reference_fasta_filename = str( $reference_source.ref_file.fields.path )
-        #end if
-        ]]></token>
-
-    </macros>
-
-    <!-- ***************************************************************** -->
-
     <version_command>gottcha.pl -h | perl -wnE'print "$1\n" for /VERSION: (\S+)/g'</version_command>
 
     <!-- ***************************************************************** -->
@@ -72,7 +50,7 @@
 
         <param name="fn_in" type="data" format="fastq" label="Input reads" help="--input" />
         <param name="db" type="select" label="Select a reference database" help="--database">
-            <options from_data_table="gottcha">
+            <options from_data_table="gottcha_indices">
                 <filter type="sort_by" column="2"/>
                 <validator type="no_options" message="No indexes are available for the selected input dataset"/>
             </options>
@@ -124,7 +102,12 @@
 
     <tests>
         <test>
-            <param name="
+            <param name="db" value="test_db" />
+            <param name="fn_in" ftype="fastq" value="test.fq" />
+            <param name="output_full" value="no" />
+            <param name="min_hits" value="1" />
+            <output name="out_tsv" file="test_02.tsv" />
+            <output name="out_log" file="test_02.log" />
         </test>
     </tests>
 
