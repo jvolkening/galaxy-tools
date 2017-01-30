@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<tool_dependency>
+    <package name="gottcha" version="1.0b-564cf3b">
+        <install version="1.0">
+            <actions_group>
+                <actions architecture="x86_64" os="linux">
+                    <action type="download_by_url" sha256sum="2c6bd06be5b373599419364505908902cbd7912a3d50d1c48734133e25078c01">https://github.com/jvolkening/galaxy-tools/blob/master/binaries/gottcha_1.0b-564cf3b_Linux_x86_64.tar.gz</action>
+                    <action type="move_directory_files">
+                        <source_directory>.</source_directory>
+                        <destination_directory>$INSTALL_DIR</destination_directory>
+                    </action>
+                </actions>
+                <action type="set_environment">
+                    <environment_variable action="prepend_to" name="PATH">$INSTALL_DIR/bin</environment_variable>
+                </action>
+            </actions_group>
+        </install>
+        <readme>
+<![CDATA[
+GOTTCHA is an application of a novel, gene-independent and signature-based
+metagenomic taxonomic profiling method with significantly smaller false
+discovery rates (FDR) that is laptop deployable. Our algorithm was tested and
+validated on twenty synthetic and mock datasets ranging in community
+composition and complexity, was applied successfully to data generated from
+spiked environmental and clinical samples, and robustly demonstrates superior
+performance compared with other available tools.
+]]> </readme>
+    </package>
+</tool_dependency>
+
+
+https://github.com/jvolkening/GOTTCHA/archive/1.0b.tar.gz

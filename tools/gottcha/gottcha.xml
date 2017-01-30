@@ -4,6 +4,12 @@
 
     <!-- ***************************************************************** -->
 
+    <requirements>
+        <requirement type="package" version="1.0b-564cf3b">gottcha</requirement>
+    </requirements>
+
+    <!-- ***************************************************************** -->
+
     <version_command>gottcha.pl -h | perl -wnE'print "$1\n" for /VERSION: (\S+)/g'</version_command>
 
     <!-- ***************************************************************** -->

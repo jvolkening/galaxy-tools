@@ -1,0 +1,16 @@
+owner: jdv
+name: package_gottcha_1_0_b_564cf3b
+description: Contains a tool dependency definition that downloads from github and installs version 1.0b of gotcha.
+categories:
+  - Tool Dependency Packages
+long_description: |
+    GOTTCHA is an application of a novel, gene-independent and signature-based
+    metagenomic taxonomic profiling method with significantly smaller false
+    discovery rates (FDR) that is laptop deployable. Our algorithm was tested and
+    validated on twenty synthetic and mock datasets ranging in community
+    composition and complexity, was applied successfully to data generated from
+    spiked environmental and clinical samples, and robustly demonstrates superior
+    performance compared with other available tools.  homepage_url:
+    https://github.com/galaxyproject/tools-iuc/ remote_repository_url:
+    https://github.com/galaxyproject/tools-iuc/blob/master/packages/package_kraken_0_10_6_eaf8fb68/
+type: tool_dependency_definition
