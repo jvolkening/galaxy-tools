@@ -1,10 +1,11 @@
-<tool id="gottcha" name="GOTTCHA" version="0.0.1">
+<tool id="gottcha" name="GOTTCHA" version="0.001">
 
     <description>Read-based metagenome characterization</description>
 
     <!-- ***************************************************************** -->
 
     <requirements>
+        <requirement type="package" version="0.7.7">bwa</requirement>
         <requirement type="package" version="1.0b-564cf3b">gottcha</requirement>
     </requirements>
 
@@ -120,10 +121,7 @@
     <help>
     <![CDATA[
 
-.. class:: infomark
-
-Description
---------------------
+**Description**
 
 Genomic Origin Through Taxonomic CHAllenge (GOTTCHA) is an
 annotation-independent and signature-based metagenomic taxonomic profiling
@@ -133,8 +131,7 @@ signature databases. The procedure includes 3 major steps: split-trimming the
 input data, mapping reads to a GOTTCHA database using BWA, profiling/filtering
 the result.
 
-Options
---------------------
+**Options**
 ::
 
     --relAbu|r   <STRING>  The field will be used to calculate relative
@@ -177,8 +174,7 @@ Options
     --minHits    <INT>     Minimum number of hits to be considered valid in 
                            abundance calculation [10]
 
-Interpreting Results
---------------------
+**Interpreting Results**
 
 GOTTCHA reports profiling results in a neat summary table
 by default. The tsv file will list the organism(s) at all taxonomic

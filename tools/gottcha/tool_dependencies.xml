@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<tool_dependency>
+    <package name="gottcha" version="1.0b-564cf3b">
+        <repository name="package_gottcha_1_0_b_564cf3b" owner="jdv" />
+    </package>
+    <package name="bwa" version="0.7.12">
+        <repository name="package_bwa_0_7_12" owner="iuc" />
+    </package>
+</tool_dependency>
+
