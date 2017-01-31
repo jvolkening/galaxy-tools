@@ -1,4 +1,4 @@
-<tool id="gottcha" name="GOTTCHA" version="0.001">
+<tool id="gottcha" name="GOTTCHA" version="0.002">
 
     <description>Read-based metagenome characterization</description>
 
