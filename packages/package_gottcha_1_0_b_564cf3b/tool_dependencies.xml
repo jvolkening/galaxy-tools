@@ -4,7 +4,7 @@
         <install version="1.0">
             <actions_group>
                 <actions architecture="x86_64" os="linux">
-                    <action type="download_by_url" sha256sum="2c6bd06be5b373599419364505908902cbd7912a3d50d1c48734133e25078c01">https://github.com/jvolkening/galaxy-tools/raw/master/binaries/gottcha_1.0b-564cf3b_Linux_x86_64.tar.gz</action>
+                    <action type="download_by_url" sha256sum="7d3268f036a34d46b871968d56f68acd8f9d0973ac24a4ba9f4d92a7334084fe">https://github.com/jvolkening/galaxy-tools/raw/master/binaries/gottcha_1.0b-564cf3b_Linux_x86_64.tar.gz</action>
                     <action type="move_directory_files">
                         <source_directory>.</source_directory>
                         <destination_directory>$INSTALL_DIR</destination_directory>
