@@ -5,7 +5,7 @@
     <!-- ***************************************************************** -->
 
     <requirements>
-        <requirement type="package" version="0.7.7">bwa</requirement>
+        <requirement type="package" version="0.7.12">bwa</requirement>
         <requirement type="package" version="1.0b-564cf3b">gottcha</requirement>
     </requirements>
 
