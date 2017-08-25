@@ -19,14 +19,13 @@
     <command detect_errors="aggressive">
     <![CDATA[
 
-    #set datatype = str($input.datatype)
     #set filename = str($input.name)
 
     mkdir out && 
 
     porechop
 
-        --input    ${input}
+        --input ${input}
 
         #if str($demux_section.demux_options.demux) == "yes":
             --barcode_dir out
@@ -34,7 +33,7 @@
             --output "out/$filename"
         #end if
 
-        #if datatype.startswith("fastq"):
+        #if $input.is_of_type('fastq')
             --format fastq
         #else:
             --format fasta
@@ -142,18 +141,29 @@
 
     <!-- ***************************************************************** -->
 
-    <!--
     <tests>
         <test>
-            <param name="db" value="test_db" />
-            <param name="fn_in" ftype="fastq" value="test.fq" />
-            <param name="output_full" value="no" />
-            <param name="min_hits" value="1" />
-            <output name="out_tsv" file="test_02.tsv" />
-            <output name="out_log" file="test_02.log" compare="sim_size" delta="2000"/>
+            <param name="input" value="test_barcodes.fastq" ftype="fastq" />
+            <param name="demux" value="yes" />
+            <output_collection name="output" type="list">
+                <element name="BC01.fastq.gz" file="bar1/BC01.fastq.gz" compare="diff" decompress="true"/>
+                <element name="BC02.fastq.gz" file="bar1/BC02.fastq.gz" compare="diff" decompress="true"/>
+                <element name="BC03.fastq.gz" file="bar1/BC03.fastq.gz" compare="diff" decompress="true"/>
+                <element name="none.fastq.gz" file="bar1/none.fastq.gz" compare="diff" decompress="true"/>
+            </output_collection>
+        </test>
+        <test>
+            <param name="input" value="test_barcodes.fastq" ftype="fastq" />
+            <param name="demux" value="yes" />
+            <param name="require_two_barcodes" value="True" />
+            <output_collection name="output" type="list">
+                <element name="BC01.fastq.gz" file="bar2/BC01.fastq.gz" compare="diff" decompress="true"/>
+                <element name="BC02.fastq.gz" file="bar2/BC02.fastq.gz" compare="diff" decompress="true"/>
+                <element name="BC03.fastq.gz" file="bar2/BC03.fastq.gz" compare="diff" decompress="true"/>
+                <element name="none.fastq.gz" file="bar2/none.fastq.gz" compare="diff" decompress="true"/>
+            </output_collection>
         </test>
     </tests>
-    -->
 
     <!-- ***************************************************************** -->
 
