@@ -1,0 +1,242 @@
+<tool id="porechop" name="porechop" version="0.001">
+
+    <description>Demux and adapter removal for Oxford Nanopore reads</description>
+
+    <!-- ***************************************************************** -->
+    
+    <!--
+    <requirements>
+        <requirement type="package" version="0.2.1">porechop</requirement>
+    </requirements>
+    -->
+
+    <!-- ***************************************************************** -->
+
+    <version_command>porechop --version</version_command>
+
+    <!-- ***************************************************************** -->
+
+    <command detect_errors="aggressive">
+    <![CDATA[
+
+    #set datatype = str($input.datatype)
+    #set filename = str($input.name)
+
+    mkdir out && 
+
+    porechop
+
+        --input    ${input}
+
+        #if str($demux_section.demux_options.demux) == "yes":
+            --barcode_dir out
+        #else:
+            --output "out/$filename"
+        #end if
+
+        #if datatype.startswith("fastq"):
+            --format fastq
+        #else:
+            --format fasta
+        #end if
+
+        --threads  \${GALAXY_SLOTS:-1}
+
+    ##--Demultiplex Options--------------------------
+
+        #if str($demux_section.demux_options.demux) == "yes":
+
+            --barcode_threshold $demux_section.demux_options.barcode_threshold
+            --barcode_diff $demux_section.demux_options.barcode_diff
+            $demux_section.demux_options.require_two_barcodes
+
+        #end if
+
+    ##--Adapter Trim Options--------------------------
+
+        #if str($trim_section.trim_options.trim) == "yes":
+
+            --adapter_threshold $trim_section.trim_options.adapter_threshold
+            --check_reads $trim_section.trim_options.check_reads
+            --scoring_scheme $trim_section.trim_options.scoring_scheme
+
+            --end_size $trim_section.trim_options.end_size
+            --end_threshold $trim_section.trim_options.end_threshold
+            --min_trim_size $trim_section.trim_options.min_trim_size
+            --extra_end_trim $trim_section.trim_options.extra_end_trim
+
+            $discard_middle
+            --middle_threshold $trim_section.trim_options.middle_threshold
+            --extra_middle_trim_good_side $trim_section.trim_options.extra_middle_trim_good_side
+            --extra_middle_trim_bad_side $trim_section.trim_options.extra_middle_trim_bad_side
+            --min_split_read_size $trim_section.trim_options.min_split_read_size
+
+
+        ##  This is not yet supported in the bioconda version
+        ## #else:
+        ##    --untrimmed
+
+        #end if
+
+    ]]>
+    </command>
+
+    <!-- ***************************************************************** -->
+
+    <inputs>
+
+        <param argument="--input" type="data" format="fastq,fasta" label="Input reads" />
+
+        <section name="demux_section" title="Demultiplexing Options" expanded="True">
+            <conditional name="demux_options">
+            <param name="demux" type="select" label="Perform demultiplexing" help="">
+                <option value="no" selected="true">no</option>
+                <option value="yes">yes</option>
+            </param>
+            <when value="no" />
+            <when value="yes">
+                <param argument="--barcode_threshold" size="5" type="float" value="75.0" min="0" max="100" label="Barcode threshold identity" />
+                <param argument="--barcode_diff" size="5" type="float" value="5.0" min="0" max="100" label="Barcode threshold difference" />
+                <param argument="--require_two_barcodes" type="boolean" truevalue="--require_two_barcodes" falsevalue="" checked="false" label="Require two barcodes" />
+            </when>
+            </conditional>
+        </section>
+
+        <section name="trim_section" title="Trimming Options" expanded="True">
+            <conditional name="trim_options">
+            <param name="trim" type="select" label="Perform adapter trimming" help="">
+                <option value="no" selected="true">no</option>
+                <option value="yes">yes</option>
+            </param>
+            <when value="no" />
+            <when value="yes">
+                <param argument="--adapter_threshold" size="4" type="float" value="90.0" min="0" max="100" label="Adapter set threshold identity" />
+                <param argument="--check_reads" size="7" type="integer" value="10000" label="Number of reads to check to determine adapter sets" />
+                <param argument="--barcode_diff" size="4" type="float" value="5.0" min="0" max="100" label="Barcode threshold difference" />
+                <param argument="--scoring_scheme" type="text" value="3,-6,-5,-2" label="Scoring scheme" />
+                <param argument="--end_size" size="4" type="integer" value="150" label="Number of terminal bases to search" />
+                <param argument="--min_trim_size" size="4" type="integer" value="4" label="Minimum adapter match length" />
+                <param argument="--extra_end_trim" size="4" type="integer" value="2" label="Adjacent bases to trim " />
+                <param argument="--end_threshold" size="4" type="float" value="75.0" min="0" max="100" label="End adapter trim threshold identity" />
+
+                <param argument="--discard_middle" type="boolean" truevalue="--discard_middle" falsevalue="" checked="false" label="Discard reads with middle adapters" />
+                <param argument="--middle_threshold" size="4" type="float" value="85.0" min="0" max="100" label="Middle adapter trim threshold identity" />
+                <param argument="--extra_middle_trim_good_side" size="4" type="integer" value="10" label="Adjacent bases to trim on good side" />
+                <param argument="--extra_middle_trim_bad_side" size="4" type="integer" value="100" label="Adjacent bases to trim on bad side" />
+                <param argument="--min_split_read_size" size="4" type="integer" value="1000" label="Minimum length of split reads to keep" />
+            </when>
+            </conditional>
+        </section>
+
+    </inputs>
+
+    <!-- ***************************************************************** -->
+
+    <outputs>
+
+        <collection type="list" name="output" format_source="input">
+            <discover_datasets pattern="(?P&lt;name&gt;.*)" directory="out" />
+        </collection>
+
+    </outputs>
+
+    <!-- ***************************************************************** -->
+
+    <!--
+    <tests>
+        <test>
+            <param name="db" value="test_db" />
+            <param name="fn_in" ftype="fastq" value="test.fq" />
+            <param name="output_full" value="no" />
+            <param name="min_hits" value="1" />
+            <output name="out_tsv" file="test_02.tsv" />
+            <output name="out_log" file="test_02.log" compare="sim_size" delta="2000"/>
+        </test>
+    </tests>
+    -->
+
+    <!-- ***************************************************************** -->
+
+    <help>
+    <![CDATA[
+
+**Description**
+
+Porechop is a tool for finding and removing adapters from Oxford Nanopore
+reads. Adapters on the ends of reads are trimmed off, and when a read has an
+adapter in its middle, it is treated as chimeric and chopped into separate
+reads. Porechop performs thorough alignments to effectively find adapters,
+even at low sequence identity.
+
+Porechop also supports demultiplexing of Nanopore reads that were barcoded
+with the Native Barcoding Kit, PCR Barcoding Kit or Rapid Barcoding Kit.
+
+**Options**
+::
+
+  *** Barcode binning settings ***
+
+  -b BARCODE_DIR, --barcode_dir BARCODE_DIR
+                                    Reads will be binned based on their barcode and saved to separate
+                                    files in this directory (incompatible with --output)
+  --barcode_threshold BARCODE_THRESHOLD
+                                    A read must have at least this percent identity to a barcode to be
+                                    binned (default: 75.0)
+  --barcode_diff BARCODE_DIFF       If the difference between a read's best barcode identity and its
+                                    second-best barcode identity is less than this value, it will not be
+                                    put in a barcode bin (to exclude cases which are too close to call)
+                                    (default: 5.0)
+  --require_two_barcodes            Reads will only be put in barcode bins if they have a strong match for
+                                    the barcode on both their start and end (default: a read can be binned
+                                    with a match at its start or end)
+  --untrimmed                       Bin reads but do not trim the ends (appropriate if reads are to be
+                                    used with Nanopolish) (default: False)
+
+  *** Adapter search settings ***
+
+  --adapter_threshold ADAPTER_THRESHOLD
+                                    An adapter set has to have at least this percent identity to be
+                                    labelled as present and trimmed off (0 to 100) (default: 90.0)
+  --check_reads CHECK_READS         This many reads will be aligned to all possible adapters to determine
+                                    which adapter sets are present (default: 10000)
+  --scoring_scheme SCORING_SCHEME   Comma-delimited string of alignment scores: match,mismatch, gap open,
+                                    gap extend (default: 3,-6,-5,-2)
+
+  *** End adapter settings ***
+
+  --end_size END_SIZE               The number of base pairs at each end of the read which will be
+                                    searched for adapter sequences (default: 150)
+  --min_trim_size MIN_TRIM_SIZE     Adapter alignments smaller than this will be ignored (default: 4)
+  --extra_end_trim EXTRA_END_TRIM   This many additional bases will be removed next to adapters found at
+                                    the ends of reads (default: 2)
+  --end_threshold END_THRESHOLD     Adapters at the ends of reads must have at least this percent identity
+                                    to be removed (0 to 100) (default: 75.0)
+
+  *** Middle adapter settings ***
+
+  --discard_middle                  Reads with middle adapters will be discarded (default: reads with
+                                    middle adapters are split) (this option is on by default when
+                                    outputting reads into barcode bins)
+  --middle_threshold MIDDLE_THRESHOLD
+                                    Adapters in the middle of reads must have at least this percent
+                                    identity to be found (0 to 100) (default: 85.0)
+  --extra_middle_trim_good_side EXTRA_MIDDLE_TRIM_GOOD_SIDE
+                                    This many additional bases will be removed next to middle adapters on
+                                    their "good" side (default: 10)
+  --extra_middle_trim_bad_side EXTRA_MIDDLE_TRIM_BAD_SIDE
+                                    This many additional bases will be removed next to middle adapters on
+                                    their "bad" side (default: 100)
+  --min_split_read_size MIN_SPLIT_READ_SIZE
+                                    Post-split read pieces smaller than this many base pairs will not be
+                                    outputted (default: 1000)
+
+
+    ]]>
+    </help>
+
+    <!-- ***************************************************************** -->
+    
+    <citations>
+    </citations>
+
+</tool>
