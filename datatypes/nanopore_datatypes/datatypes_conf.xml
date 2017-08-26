@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<datatypes>
+    <registration>
+        <datatype extension="fast5" type="galaxy.datatypes.binary:H5" subclass="True"/>
+    </registration>
+</datatypes>
