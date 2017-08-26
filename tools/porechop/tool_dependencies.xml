@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<tool_dependency>
+    <package name="porechop" version="0.2.1">
+        <repository name="package_porechop_0_2_1" owner="jdv" />
+    </package>
+</tool_dependency>
+

@@ -4,15 +4,13 @@
 
     <!-- ***************************************************************** -->
     
-    <!--
     <requirements>
         <requirement type="package" version="0.2.1">porechop</requirement>
     </requirements>
-    -->
 
     <!-- ***************************************************************** -->
 
-    <version_command>porechop --version</version_command>
+    <version_command>porechop-runner.py --version</version_command>
 
     <!-- ***************************************************************** -->
 
@@ -23,7 +21,7 @@
 
     mkdir out && 
 
-    porechop
+    porechop-runner.py
 
         --input ${input}
 
