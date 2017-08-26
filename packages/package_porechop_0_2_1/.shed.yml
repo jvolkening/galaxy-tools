@@ -1,6 +1,6 @@
 owner: jdv
 name: package_porechop_0_2_1
-description: Contains a tool dependency definition that downloads from github and installs version 0.2.1 of porechop.
+description: Contains a tool dependency definition that downloads from Github and installs version 0.2.1 of porechop.
 categories:
   - Tool Dependency Packages
 long_description: |
