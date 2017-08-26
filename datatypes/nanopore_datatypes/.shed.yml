@@ -1,0 +1,11 @@
+name: nanopore_datatypes
+owner: jdv
+description: datatypes for Oxford Nanopore sequencing data
+long_description: |
+    This package contains datatype definitions for file formats associated
+    with Oxford Nanopore sequencing. Currently this is just the FAST5
+    defition.
+remote_repository_url: https://github.com/jvolkening/galaxy-tools/tree/master/datatypes/nanopore_datatypes
+type: unrestricted
+categories:
+- Sequence Analysis
