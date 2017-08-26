@@ -1,6 +1,6 @@
 name: porechop
 owner: jdv
-description: Porechop - demultiplexing and adapter removal for Oxford Nanopore reads
+description: Porechop - demultiplexing and adapter trimming of Oxford Nanopore reads
 homepage_url: https://github.com/rrwick/Porechop
 long_description: |
     Porechop is a tool for finding and removing adapters from Oxford Nanopore
