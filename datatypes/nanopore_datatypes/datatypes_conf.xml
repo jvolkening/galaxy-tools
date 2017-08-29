@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <datatypes>
     <registration>
-        <datatype extension="fast5" type="galaxy.datatypes.binary:H5" subclass="True"/>
+        <datatype extension="fast5" type="galaxy.datatypes.binary:H5" subclass="True" display_in_upload="True" />
+        <datatype extension="fast5.tar.gz" type="galaxy.datatypes.binary:CompressedArchive" subclass="True" display_in_upload="True" />
     </registration>
 </datatypes>

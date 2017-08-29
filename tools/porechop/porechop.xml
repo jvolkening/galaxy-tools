@@ -10,7 +10,7 @@
 
     <!-- ***************************************************************** -->
 
-    <version_command>porechop-runner.py --version</version_command>
+    <version_command>porechop --version</version_command>
 
     <!-- ***************************************************************** -->
 
@@ -21,7 +21,7 @@
 
     mkdir out && 
 
-    porechop-runner.py
+    porechop
 
         --input ${input}
 
@@ -69,9 +69,9 @@
             --min_split_read_size $trim_section.trim_options.min_split_read_size
 
 
-        ##  This is not yet supported in the bioconda version
-        ## #else:
-        ##    --untrimmed
+        #  This is not yet supported in the bioconda version
+        # #else:
+        #    --untrimmed
 
         #end if
 
