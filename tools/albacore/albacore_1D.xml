@@ -19,7 +19,7 @@
     <command detect_errors="aggressive">
     <![CDATA[
 
-    python3 $__tool_directory__/albacore_1D.py $input $output \${GALAXY_SLOTS:-1}
+    python3 $__tool_directory__/albacore_1D.py $input $output $out_format $demux \${GALAXY_SLOTS:-1}
 
     ]]>
     </command>
@@ -29,6 +29,11 @@
     <inputs>
 
         <param name="input" type="data" format="fast5_archive" label="Input reads" />
+        <param name="out_format" type="select" label="Output format">
+            <option value="fastq" selected="true">fastq</option>
+            <option value="fast5">fast5</option>
+        </param>
+        <param name="demux" type="boolean" checked="false" label="Demultiplex" />
 
     </inputs>
 
@@ -36,7 +41,20 @@
 
     <outputs>
 
-        <data name="output" format="fastq" label="${tool.name} on ${on_string} (called.fastq)" />
+        <data name="output" format="fastq" label="${tool.name} on ${on_string}">
+            <filter>demux is False</filter>
+            <change_format>
+                <when input="out_format" value="fast5" format="fast5_archive" />
+            </change_format>
+        </data>
+        <collection type="list" name="output_collection_fastq">
+            <filter>demux is True and out_format == 'fastq'</filter>
+            <discover_datasets pattern="(?P&lt;name&gt;.*)" directory="final" format="fastq" />
+        </collection>
+        <collection type="list" name="output_collection_fast5">
+            <filter>demux is True and out_format == 'fast5'</filter>
+            <discover_datasets pattern="(?P&lt;name&gt;.*)" directory="final" format="fast5_archive" />
+        </collection>
 
     </outputs>
 
