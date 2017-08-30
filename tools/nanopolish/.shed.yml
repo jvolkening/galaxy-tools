@@ -1,0 +1,13 @@
+name: nanopolish
+owner: jdv
+description: Nanopolish - signal-level analysis of ONT sequencing data
+#homepage_url: 
+long_description: |
+    Nanopolish is a software package for signal-level analysis of Oxford Nanopore
+    sequencing data. Nanopolish can calculate an improved consensus sequence for a
+    draft genome assembly, detect base modifications, call SNPs and indels with
+    respect to a reference genome and more.
+remote_repository_url: https://github.com/jvolkening/galaxy-tools/tree/master/tools/nanopolish
+type: unrestricted
+categories:
+  - Sequence Analysis
