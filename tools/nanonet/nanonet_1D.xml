@@ -1,0 +1,86 @@
+<tool id="nanonet_1D" name="Nanonet 1D" version="2.0.0">
+
+    <description>ONT development basecaller</description>
+
+    <!-- ***************************************************************** -->
+   
+    <!--
+    <requirements>
+        <requirement type="package" version="2.0.0">nanonet</requirement>
+    </requirements>
+    -->
+
+    <!-- ***************************************************************** -->
+
+    <version_command>echo "2.0.0"</version_command>
+
+    <!-- ***************************************************************** -->
+
+    <command detect_errors="aggressive">
+    <![CDATA[
+
+    python3 $__tool_directory__/nanonet_1D.py $input $output \${GALAXY_SLOTS:-1}
+
+    ]]>
+    </command>
+
+    <!-- ***************************************************************** -->
+
+    <inputs>
+
+        <param name="input" type="data" format="fast5_archive" label="Input reads" />
+
+    </inputs>
+
+    <!-- ***************************************************************** -->
+
+    <outputs>
+
+        <data name="output" format="fastq" label="${tool.name} on ${on_string} (called.fastq)" />
+
+    </outputs>
+
+    <!-- ***************************************************************** -->
+
+    <tests>
+        <!-- multithreaded output is non-deterministic, so simply compare file
+        sizes -->
+        <test>
+            <param name="input" value="test_data.fast5.tar.gz" ftype="fast5_archive" />
+            <output name="output" file="test_data.fastq" compare="sim_size" delta="0" />
+        </test>
+    </tests>
+
+    <!-- ***************************************************************** -->
+
+    <help>
+    <![CDATA[
+
+**Description**
+
+Nanonet provides recurrent neural network basecalling for Oxford Nanopore
+MinION data. It represents the first generation of such a basecaller from
+Oxford Nanopore Technologies, and is provided as a technology demonstrator.
+Nanonet is provided unsupported by Oxford Nanopore Technologies, see
+LICENSE.md for more information.
+
+For training networks, Nanonet leverages currennt to run recurrent neural
+networks. Currennt is generally run with GPUs to aid performance but can be
+run in a CPU only environment. The basecaller does not require currennt, and
+is written in pure python with minimal requirements.
+
+The Galaxy wrapper has modified nanonet to take a gzip tarball of FAST5 reads
+as input, such as can be produced by `poretools combine`, and always outputs a
+single FASTQ file.
+
+This is the 1D basecaller.
+
+    ]]>
+    </help>
+
+    <!-- ***************************************************************** -->
+    
+    <citations>
+    </citations>
+
+</tool>

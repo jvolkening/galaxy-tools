@@ -1,0 +1,13 @@
+name: nanonet
+owner: jdv
+description: Nanonet - first generation RNN basecaller for ONT data
+homepage_url: https://github.com/nanoporetech/nanonet
+long_description: |
+    Nanonet provides recurrent neural network basecalling for Oxford Nanopore
+    MinION data. It represents the first generation of such a basecaller from
+    Oxford Nanopore Technologies, and is provided as a technology demonstrator.
+    Nanonet is provided unsupported by Oxford Nanopore Technologies.
+remote_repository_url: https://github.com/jvolkening/galaxy-tools/tree/master/tools/nanonet
+type: unrestricted
+categories:
+  - Sequence Analysis

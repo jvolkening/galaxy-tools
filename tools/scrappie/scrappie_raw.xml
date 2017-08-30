@@ -1,0 +1,81 @@
+<tool id="scrappie_raw" name="Scrappie (raw)" version="1.0.0">
+
+    <description>ONT development basecaller</description>
+
+    <!-- ***************************************************************** -->
+   
+    <!--
+    <requirements>
+        <requirement type="package" version="1.0.0">scrappie</requirement>
+    </requirements>
+    -->
+
+    <!-- ***************************************************************** -->
+
+    <version_command>scrappie version | perl -wnE'print "$1\n" for /scrappie (.+)/g'</version_command>
+
+    <!-- ***************************************************************** -->
+
+    <command detect_errors="aggressive">
+    <![CDATA[
+
+    python3 $__tool_directory__/scrappie_raw.py $input $output \${GALAXY_SLOTS:-1}
+
+    ]]>
+    </command>
+
+    <!-- ***************************************************************** -->
+
+    <inputs>
+
+        <param name="input" type="data" format="fast5_archive" label="Input reads" />
+
+    </inputs>
+
+    <!-- ***************************************************************** -->
+
+    <outputs>
+
+        <data name="output" format="fasta" label="${tool.name} on ${on_string} (called.fasta)" />
+
+    </outputs>
+
+    <!-- ***************************************************************** -->
+
+    <tests>
+        <!-- multithreaded output is non-deterministic, so simply compare file
+        sizes -->
+        <test>
+            <param name="input" value="test_data.fast5.tar.gz" ftype="fast5_archive" />
+            <output name="output" file="test_data.fasta" compare="sim_size" delta="0" />
+        </test>
+    </tests>
+
+    <!-- ***************************************************************** -->
+
+    <help>
+    <![CDATA[
+
+**Description**
+
+Scrappie provides recurrent neural network basecalling for Oxford Nanopore
+MinION data. It is a technology demonstrator for the Oxford Nanopore
+Research Algorithms group. It is designed for improved calling of
+homopolymers over nanonet. Scrappie is provided unsupported by Oxford
+Nanopore Technologies.
+
+The Galaxy wrapper has modified scrappie to take a gzip tarball of FAST5 reads
+as input, such as can be produced by `poretools combine`, and always outputs a
+single FASTA file.
+
+This is the raw basecaller.
+
+    ]]>
+    </help>
+
+    <!-- ***************************************************************** -->
+    
+    <citations>
+    </citations>
+
+</tool>

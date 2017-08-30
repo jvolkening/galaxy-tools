@@ -1,0 +1,14 @@
+name: scrappie
+owner: jdv
+description: Scrappie - development RNN basecaller for ONT data
+homepage_url: https://github.com/nanoporetech/scrappie
+long_description: |
+    Scrappie provides recurrent neural network basecalling for Oxford Nanopore
+    MinION data. It is a technology demonstrator for the Oxford Nanopore
+    Research Algorithms group. It is designed for improved calling of
+    homopolymers over nanonet. Scrappie is provided unsupported by Oxford
+    Nanopore Technologies.
+remote_repository_url: https://github.com/jvolkening/galaxy-tools/tree/master/tools/scrappie
+type: unrestricted
+categories:
+  - Sequence Analysis
