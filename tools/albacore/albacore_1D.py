@@ -9,7 +9,6 @@ import h5py
 import numpy as np
 
 def main():
-    #genome_seq_file = sys.argv[1]
     tar_file = sys.argv[1]
     out_file = sys.argv[2]
     threads  = sys.argv[3]

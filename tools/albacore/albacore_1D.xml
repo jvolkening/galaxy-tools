@@ -1,12 +1,12 @@
-<tool id="albacore_1D" name="albacore 1D" version="1.2.6">
+<tool id="albacore_1D" name="Albacore 1D" version="1.2.6">
 
-    <description>ONT basecaller</description>
+    <description>ONT production basecaller</description>
 
     <!-- ***************************************************************** -->
    
     <!--
     <requirements>
-        <requirement type="package" version="0.2.1">porechop</requirement>
+        <requirement type="package" version="1.2.6">albacore</requirement>
     </requirements>
     -->
 
@@ -28,7 +28,7 @@
 
     <inputs>
 
-        <param name="input" type="data" format="fast5.tar.gz" label="Input reads" />
+        <param name="input" type="data" format="fast5_archive" label="Input reads" />
 
     </inputs>
 
@@ -44,7 +44,7 @@
 
     <tests>
         <test>
-            <param name="input" value="test_data.fast5.tar.gz" ftype="fast5.tar.gz" />
+            <param name="input" value="test_data.fast5.tar.gz" ftype="fast5_archive" />
             <output name="output" file="test_data.fastq" compare="diff" />
         </test>
     </tests>
