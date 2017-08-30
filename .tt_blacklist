@@ -4,3 +4,7 @@ tools/pair_split
 tools/canu
 tools/cipres
 tools/crux
+tools/porechop
+tools/albacore
+tools/nanonet
+tools/scrappie
