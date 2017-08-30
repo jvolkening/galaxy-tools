@@ -132,7 +132,7 @@
 
     <outputs>
 
-        <collection type="list" name="output" format="fastq">
+        <collection type="list" name="output">
             <discover_datasets pattern="(?P&lt;name&gt;.*)" directory="out" format="fastq" />
         </collection>
 
