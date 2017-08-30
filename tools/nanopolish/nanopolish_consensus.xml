@@ -1,6 +1,6 @@
-<tool id="nanopolish_extract" name="Nanopolish extract" version="0.7.2">
+<tool id="nanopolish_consensus" name="Nanopolish consensus" version="0.7.2">
 
-    <description>FAST5 to FASTQ extraction</description>
+    <description>Re-call consensus from raw signal</description>
 
     <!-- ***************************************************************** -->
    
@@ -19,7 +19,13 @@
     <command detect_errors="aggressive">
     <![CDATA[
 
-    python3 $__tool_directory__/nanopolish_extract.py $input $output \${GALAXY_SLOTS:-1}
+    nanopolish consensus
+
+        --reads   $input_reads
+        --bam     $input_bam
+        --genome  $input_ref
+        --outfile $output
+        --threads \${GALAXY_SLOTS:-1}
 
     ]]>
     </command>
@@ -28,11 +34,9 @@
 
     <inputs>
 
-        <param name="input" type="data" format="fast5_archive" label="Input reads" />
-        <param name="out_format" type="select" label="Output format">
-            <option value="fastq" selected="true">fastq</option>
-            <option value="fasta">fasta</option>
-        </param>
+        <param name="input_reads" type="data" format="fasta" label="Input reads" />
+        <param name="input_bam"   type="data" format="bam"   label="Alignment" />
+        <param name="input_ref"   type="data" format="fasta" label="Reference" />
 
     </inputs>
 
@@ -40,11 +44,7 @@
 
     <outputs>
 
-        <data name="output" format="fastq" label="${tool.name} on ${on_string}">
-            <change_format>
-                <when input="out_format" value="fasta" format="fasta" />
-            </change_format>
-        </data>
+        <data name="output" format="fastq" label="${tool.name} on ${on_string} (reads.fastq)" />
 
     </outputs>
 
