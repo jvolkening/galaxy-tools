@@ -3,10 +3,12 @@
     <description>Demux and adapter removal for Oxford Nanopore reads</description>
 
     <!-- ***************************************************************** -->
-    
+   
+    <!-- not yet working with Bioconda
     <requirements>
         <requirement type="package" version="0.2.1">porechop</requirement>
     </requirements>
+    -->
 
     <!-- ***************************************************************** -->
 
@@ -62,16 +64,15 @@
             --min_trim_size $trim_section.trim_options.min_trim_size
             --extra_end_trim $trim_section.trim_options.extra_end_trim
 
-            $discard_middle
+            $trim_section.trim_options.discard_middle
             --middle_threshold $trim_section.trim_options.middle_threshold
             --extra_middle_trim_good_side $trim_section.trim_options.extra_middle_trim_good_side
             --extra_middle_trim_bad_side $trim_section.trim_options.extra_middle_trim_bad_side
             --min_split_read_size $trim_section.trim_options.min_split_read_size
 
 
-        #  This is not yet supported in the bioconda version
-        # #else:
-        #    --untrimmed
+        #else:
+            --untrimmed
 
         #end if
 
@@ -144,10 +145,10 @@
             <param name="input" value="test_barcodes.fastq" ftype="fastq" />
             <param name="demux" value="yes" />
             <output_collection name="output" type="list">
-                <element name="BC01.fastq.gz" file="bar1/BC01.fastq.gz" compare="diff" decompress="true"/>
-                <element name="BC02.fastq.gz" file="bar1/BC02.fastq.gz" compare="diff" decompress="true"/>
-                <element name="BC03.fastq.gz" file="bar1/BC03.fastq.gz" compare="diff" decompress="true"/>
-                <element name="none.fastq.gz" file="bar1/none.fastq.gz" compare="diff" decompress="true"/>
+                <element name="BC01.fastq" file="bar1/BC01.fastq" compare="diff" decompress="true"/>
+                <element name="BC02.fastq" file="bar1/BC02.fastq" compare="diff" decompress="true"/>
+                <element name="BC03.fastq" file="bar1/BC03.fastq" compare="diff" decompress="true"/>
+                <element name="none.fastq" file="bar1/none.fastq" compare="diff" decompress="true"/>
             </output_collection>
         </test>
         <test>
@@ -155,10 +156,21 @@
             <param name="demux" value="yes" />
             <param name="require_two_barcodes" value="True" />
             <output_collection name="output" type="list">
-                <element name="BC01.fastq.gz" file="bar2/BC01.fastq.gz" compare="diff" decompress="true"/>
-                <element name="BC02.fastq.gz" file="bar2/BC02.fastq.gz" compare="diff" decompress="true"/>
-                <element name="BC03.fastq.gz" file="bar2/BC03.fastq.gz" compare="diff" decompress="true"/>
-                <element name="none.fastq.gz" file="bar2/none.fastq.gz" compare="diff" decompress="true"/>
+                <element name="BC01.fastq" file="bar2/BC01.fastq" compare="diff" decompress="true"/>
+                <element name="BC02.fastq" file="bar2/BC02.fastq" compare="diff" decompress="true"/>
+                <element name="BC03.fastq" file="bar2/BC03.fastq" compare="diff" decompress="true"/>
+                <element name="none.fastq" file="bar2/none.fastq" compare="diff" decompress="true"/>
+            </output_collection>
+        </test>
+        <test>
+            <param name="input" value="test_barcodes.fastq" ftype="fastq" />
+            <param name="demux" value="yes" />
+            <param name="trim" value="yes" />
+            <output_collection name="output" type="list">
+                <element name="BC01.fastq" file="bar1_trim/BC01.fastq" compare="diff" decompress="true"/>
+                <element name="BC02.fastq" file="bar1_trim/BC02.fastq" compare="diff" decompress="true"/>
+                <element name="BC03.fastq" file="bar1_trim/BC03.fastq" compare="diff" decompress="true"/>
+                <element name="none.fastq" file="bar1_trim/none.fastq" compare="diff" decompress="true"/>
             </output_collection>
         </test>
     </tests>
