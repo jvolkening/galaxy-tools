@@ -1,6 +1,6 @@
-<tool id="porechop" name="porechop" version="0.2.1">
+<tool id="porechop" name="Porechop" version="0.2.1">
 
-    <description>Demux and adapter removal for Oxford Nanopore reads</description>
+    <description>Demux and adapter removal of ONT reads</description>
 
     <!-- ***************************************************************** -->
    
@@ -33,11 +33,11 @@
             --output "out/$filename"
         #end if
 
-        #if $input.is_of_type('fastq')
+        ##if $input.is_of_type('fastq')
             --format fastq
-        #else:
-            --format fasta
-        #end if
+        ##else:
+            ##--format fasta
+        ##end if
 
         --threads  \${GALAXY_SLOTS:-1}
 
@@ -132,8 +132,8 @@
 
     <outputs>
 
-        <collection type="list" name="output" format_source="input">
-            <discover_datasets pattern="(?P&lt;name&gt;.*)" directory="out" />
+        <collection type="list" name="output" format="fastq">
+            <discover_datasets pattern="(?P&lt;name&gt;.*)" directory="out" format="fastq" />
         </collection>
 
     </outputs>
