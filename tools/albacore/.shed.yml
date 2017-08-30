@@ -1,0 +1,11 @@
+name: albacore_1D
+owner: jdv
+description: Albacore - nanopore basecalling software from ONT
+#homepage_url: 
+long_description: |
+    Albacore is the official ONT software suite for offline basecalling of
+    Oxford Nanopore sequencing reads.
+remote_repository_url: https://github.com/jvolkening/galaxy-tools/tree/master/tools/albacore
+type: unrestricted
+categories:
+  - Sequence Analysis

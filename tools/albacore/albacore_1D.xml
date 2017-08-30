@@ -1,0 +1,78 @@
+<tool id="albacore_1D" name="albacore 1D" version="1.2.6">
+
+    <description>ONT basecaller</description>
+
+    <!-- ***************************************************************** -->
+   
+    <!--
+    <requirements>
+        <requirement type="package" version="0.2.1">porechop</requirement>
+    </requirements>
+    -->
+
+    <!-- ***************************************************************** -->
+
+    <version_command>read_fast5_basecaller.py --version | perl -wnE'print "$1\n" for /\(version ([^\)]+)\)/g'</version_command>
+
+    <!-- ***************************************************************** -->
+
+    <command detect_errors="aggressive">
+    <![CDATA[
+
+    python3 $__tool_directory__/albacore_1D.py $input $output \${GALAXY_SLOTS:-1}
+
+    ]]>
+    </command>
+
+    <!-- ***************************************************************** -->
+
+    <inputs>
+
+        <param name="input" type="data" format="fast5.tar.gz" label="Input reads" />
+
+    </inputs>
+
+    <!-- ***************************************************************** -->
+
+    <outputs>
+
+        <data name="output" format="fastq" label="${tool.name} on ${on_string} (called.fastq)" />
+
+    </outputs>
+
+    <!-- ***************************************************************** -->
+
+    <tests>
+        <test>
+            <param name="input" value="test_data.fast5.tar.gz" ftype="fast5.tar.gz" />
+            <output name="output" file="test_data.fastq" compare="diff" />
+        </test>
+    </tests>
+
+    <!-- ***************************************************************** -->
+
+    <help>
+    <![CDATA[
+
+**Description**
+
+Albacore is a tool for basecalling Oxford Nanopore reads. It is distributed by
+ONT to authorized community members only and thus is not packaged through
+Galaxy or Bioconda. End users are responsible for installing and testing the
+albacore software themselves and ensuring that it is in the galaxy user $PATH.
+
+The Galaxy wrapper has modified albacore to take a gzip tarball of FAST5 reads
+as input, such as can be produced by `poretools combine`, and always outputs a
+single FASTQ file.
+
+This is the 1D basecaller.
+
+    ]]>
+    </help>
+
+    <!-- ***************************************************************** -->
+    
+    <citations>
+    </citations>
+
+</tool>
