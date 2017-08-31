@@ -1,0 +1,103 @@
+<tool id="canu" name="Canu" version="1.6">
+
+    <description>Re-call consensus and variants from raw signal</description>
+
+    <!-- ***************************************************************** -->
+   
+    <!--
+    <requirements>
+        <requirement type="package" version="1.6">canu</requirement>
+    </requirements>
+    -->
+
+    <!-- ***************************************************************** -->
+
+    <version_command>echo "1.6"</version_command>
+
+
+    <!-- ***************************************************************** -->
+
+    <command detect_errors="aggressive">
+    <![CDATA[
+
+    canu
+        
+        -p canu_galaxy
+        -d out_dir
+        useGrid=false
+        genomeSize=$genome_size
+        rawErrorRate=$raw_error_rate
+        correctedErrorRate=$corrected_error_rate
+        minReadLength=$min_read_length
+        minOverlapLength=$min_overlap
+        maxThreads=\${GALAXY_SLOTS:-1}
+        $mode
+        $input
+
+
+    ]]>
+    </command>
+
+    <!-- ***************************************************************** -->
+
+    <inputs>
+
+        <param name="input" type="data" format="fasta,fasta.gz,fastq,fastq.gz" label="Input reads" />
+        <param name="mode" type="select">
+            <option value="-nanopore-raw" selected="true">nanopore raw</option>
+            <option value="-pacbio-raw">pacbio raw</option>
+            <option value="-nanopore-corrected">nanopore corrected</option>
+            <option value="-pacbio-corrected">pacbio corrected</option>
+        </param>
+        <param name="genome_size" type="text" size="5" label="Estimated genome size (e.g. 80m, 15k, 2g)" />
+        <param name="raw_error_rate" type="float" min="0" max="1" size="5" label="Maximum raw overlap mismatch (0-1)" />
+        <param name="corrected_error_rate" type="float" min="0" max="1" size="5" label="Maximum corrected overlap mismatch (0-1)" />
+        <param name="min_read_length" type="integer" min="1" size="5" label="Minimum read length" />
+        <param name="min_overlap" type="integer" min="1" size="5" label="Minimum overlap" />
+
+    </inputs>
+
+    <!-- ***************************************************************** -->
+
+    <outputs>
+
+        <data name="output" format="fastq" label="${tool.name} on ${on_string} (reads.fastq)" />
+
+    </outputs>
+
+    <!-- ***************************************************************** -->
+
+    <tests>
+        <test>
+            <param name="input" value="test_data.fast5.tar.gz" ftype="fast5_archive" />
+            <output name="output" file="test_data.fastq" compare="sim_size" delta="0"/>
+        </test>
+    </tests>
+
+    <!-- ***************************************************************** -->
+
+    <help>
+    <![CDATA[
+
+**Description**
+
+Nanopolish is a software package for signal-level analysis of Oxford Nanopore
+sequencing data. Nanopolish can calculate an improved consensus sequence for a
+draft genome assembly, detect base modifications, call SNPs and indels with
+respect to a reference genome and more.
+
+The Galaxy wrapper has modified nanopolish to take a gzip tarball of FAST5 reads
+as input, such as can be produced by `poretools combine`, and always outputs a
+single FASTQ file.
+
+This is the `extract` module.
+
+    ]]>
+    </help>
+
+    <!-- ***************************************************************** -->
+    
+    <citations>
+    </citations>
+
+</tool>

@@ -1,0 +1,12 @@
+name: canu
+owner: jdv
+description: High-noise single molecule assembler
+#homepage_url: 
+long_description: |
+    Canu is a fork of the Celera Assembler, designed for high-noise
+    single-molecule sequencing (such as the PacBio RS II/Sequel or Oxford Nanopore
+    MinION).
+remote_repository_url: https://github.com/jvolkening/galaxy-tools/tree/master/tools/canu
+type: unrestricted
+categories:
+  - Sequence Analysis
