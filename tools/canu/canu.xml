@@ -12,7 +12,7 @@
 
     <!-- ***************************************************************** -->
 
-    <version_command>echo "1.6"</version_command>
+    <version_command>canu --version | perl -wnE'print "$1\n" for /^Canu (?:snapshot v)?(\S+)/g'</version_command>
 
 
     <!-- ***************************************************************** -->
@@ -30,7 +30,10 @@
         correctedErrorRate=$corrected_error_rate
         minReadLength=$min_read_length
         minOverlapLength=$min_overlap
+        minThreads=\${GALAXY_SLOTS:-1}
         maxThreads=\${GALAXY_SLOTS:-1}
+        gnuplotTested=true
+        useGrid=false
         $mode
         $input
 
