@@ -1,6 +1,6 @@
 <tool id="porechop" name="Porechop" version="0.2.1">
 
-    <description>Demux and adapter removal of ONT reads</description>
+    <description>Demux and adapter removal</description>
 
     <!-- ***************************************************************** -->
    
