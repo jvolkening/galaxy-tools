@@ -1,6 +1,6 @@
-<tool id="nanopolish_extract" name="Nanopolish extract" version="0.7.2">
+<tool id="nanopolish_extract" name="Nanopolish::extract" version="0.7.2">
 
-    <description>FAST5 to FASTQ extraction</description>
+    <description>FAST5 to FASTQ/A extraction</description>
 
     <!-- ***************************************************************** -->
    
@@ -40,7 +40,7 @@
 
     <outputs>
 
-        <data name="output" format="fastq" label="${tool.name} on ${on_string}">
+        <data name="output" format="fastqsanger" label="${tool.name} on ${on_string}">
             <change_format>
                 <when input="out_format" value="fasta" format="fasta" />
             </change_format>

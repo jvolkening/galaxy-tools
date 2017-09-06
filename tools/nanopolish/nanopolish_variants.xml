@@ -1,4 +1,4 @@
-<tool id="nanopolish_variants" name="Nanopolish variants" version="0.7.2">
+<tool id="nanopolish_variants" name="Nanopolish::variants" version="0.7.2">
 
     <description>Re-call consensus and variants from raw signal</description>
 
@@ -19,15 +19,24 @@
     <command detect_errors="aggressive">
     <![CDATA[
 
-    nanopolish consensus
+    ln -s $input_bam 'input.bam'  &&
+    ln -s $input_bam.metadata.bam_index input.bai &&
+
+    perl $__tool_directory__/nanopolish_variants.pl variants
 
         --reads     $input_reads
-        --bam       $input_bam
+        --bam       input.bam
         --genome    $input_ref
         --consensus $out_consensus
         --outfile   $out_variants
         --threads \${GALAXY_SLOTS:-1}
+        --max-round $max_rounds
+        --max-haplotypes $max_haplotypes
+        --min-candidate-depth $min_candidate_depth
+        --min-candidate-frequency $min_candidate_frequency
+        --fast5 $input_fast5
         $fix_homopolymers
+        $calculate_all_support
 
     ]]>
     </command>
@@ -36,33 +45,30 @@
 
     <inputs>
 
-        <param name="input_reads" type="data" format="fasta" label="Input reads" />
+        <param name="input_reads" type="data" format="fasta" label="Input reads (FASTA)" />
+        <param name="input_fast5" type="data" format="fast5_archive" label="Input reads (FAST5)" />
         <param name="input_bam"   type="data" format="bam"   label="Alignment" />
         <param name="input_ref"   type="data" format="fasta" label="Reference" />
-        <param argument="--min-candidate-frequency" type="float" value="0.2" size="5" label="Minimum candidate frequency" />
-        <param argument="--min-candidate-depth" type="integer" min="1" value="20" size="5" label="Minimum candidate depth" />
-        <param argument="--max-haplotypes" type="integer" min="0" value="1000" size="5" label="Maximum haplotype combinations" />
-        <param argument="--max-rounds" type="integer" min="0" value="50" size="5" label="Maximum iterations" />
-        <param argument="--fix-homopolymers" type="boolean" checked="false" label="Fix homopolymers" />
-        <param argument="--calculate-all-support" type="boolean" checked="false" label="Calculate support for all four bases" />
-
+        <param name="min_candidate_frequency" type="float" value="0.2" size="5" label="Minimum candidate frequency" />
+        <param name="min_candidate_depth" type="integer" min="1" value="20" size="5" label="Minimum candidate depth" />
+        <param name="max_haplotypes" type="integer" min="0" value="1000" size="5" label="Maximum haplotype combinations" />
+        <param name="max_rounds" type="integer" min="0" value="50" size="5" label="Maximum iterations" />
+        <param name="fix_homopolymers" type="boolean" checked="false" truevalue="--fix-homopolymers" falsevalue="" label="Fix homopolymers" />
+        <param name="calculate_all_support" type="boolean" checked="false" truevalue="--calculate-all-support" falsevalue="" label="Calculate support for all four bases" /> 
     </inputs>
 
     <!-- ***************************************************************** -->
 
     <outputs>
 
-        <data name="output" format="fastq" label="${tool.name} on ${on_string} (reads.fastq)" />
+        <data name="out_variants" format="vcf" label="${tool.name} on ${on_string} (variants)" />
+        <data name="out_consensus" format="fasta" label="${tool.name} on ${on_string} (consensus)" />
 
     </outputs>
 
     <!-- ***************************************************************** -->
 
     <tests>
-        <test>
-            <param name="input" value="test_data.fast5.tar.gz" ftype="fast5_archive" />
-            <output name="output" file="test_data.fastq" compare="sim_size" delta="0"/>
-        </test>
     </tests>
 
     <!-- ***************************************************************** -->
