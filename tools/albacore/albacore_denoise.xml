@@ -1,0 +1,117 @@
+<tool id="albacore_denoise" name="Albacore Denoise" version="0.001">
+
+    <description>Filter noise from barcode bins</description>
+
+    <!-- ***************************************************************** -->
+   
+    <!--
+    <requirements>
+        <requirement type="package" version="1.2.6">albacore</requirement>
+    </requirements>
+    -->
+
+    <!-- ***************************************************************** -->
+
+    <version_command>echo "0.001"</version_command>
+
+    <!-- ***************************************************************** -->
+
+    <command detect_errors="aggressive">
+    <![CDATA[
+
+    perl $__tool_directory__/denoise.pl
+
+        --table $table
+
+        #if $filter.type == 'topN'
+          --n_keep ${filter.n_keep}
+        #else
+          --min_score ${filter.min_score}
+          --min_frac  ${filter.min_frac}
+        #end if
+
+        $remove_unclassified
+
+        #for $input in $inputs
+            --input ${input}
+            --name  ${input.name}
+        #end for
+
+        --summary $summary
+
+    ]]>
+    </command>
+
+    <!-- ***************************************************************** -->
+
+    <inputs>
+
+        <param name="inputs" type="data_collection" collection_type="list" format="fast5_archive" label="Input reads" multiple="true" />
+        <param name="table" type="data" format="tabular" label="Read table" />
+        <conditional name="filter">
+            <param name="type" type="select" label="Filtering type">
+                <option value="cutoffs" selected="true">By cutoff</option>
+                <option value="topN">Top N bins</option>
+            </param>
+            <when value="cutoffs">
+                <param name="min_score" value="70" type="float" min="0" max="100" label="Minimum average score (0-100)" />
+                <param name="min_frac" value="0.05" type="float" min="0" label="Minimum fraction of average count" />
+            </when>
+            <when value="topN">
+                <param name="n_keep" value="1" type="integer" min="1" label="Number of top bins to keep" />
+            </when>
+        </conditional>
+        <param name="remove_unclassified" type="boolean" checked="true" truevalue="--remove_unclassified" falsevalue="" label="Remove unclassified reads" />
+
+    </inputs>
+
+    <!-- ***************************************************************** -->
+
+    <outputs>
+
+        <collection type="list" name="outputs" label="${tool.name} on ${on_string} (reads)">
+            <discover_datasets pattern="(?P&lt;name&gt;.*)\.fast5\.tar\.gz$" directory="outputs" format="fast5_archive" />
+        </collection>
+
+        <data name="summary" format="tabular" label="${tool.name} on ${on_string} (summary)" />
+
+    </outputs>
+
+    <!-- ***************************************************************** -->
+
+    <!--
+    <tests>
+        <test>
+            <param name="input" value="test_data.fast5.tar.gz" ftype="fast5_archive" />
+            <output name="output" file="test_data.fastq" compare="diff" />
+        </test>
+    </tests>
+    -->
+
+    <!-- ***************************************************************** -->
+
+    <help>
+    <![CDATA[
+
+**Description**
+
+Albacore is a tool for basecalling Oxford Nanopore reads. It is distributed by
+ONT to authorized community members only and thus is not packaged through
+Galaxy or Bioconda. End users are responsible for installing and testing the
+albacore software themselves and ensuring that it is in the galaxy user $PATH.
+
+The Galaxy wrapper has modified albacore to take a gzip tarball of FAST5 reads
+as input, such as can be produced by `poretools combine`, and always outputs a
+single FASTQ file.
+
+This is the 1D basecaller.
+
+    ]]>
+    </help>
+
+    <!-- ***************************************************************** -->
+    
+    <citations>
+    </citations>
+
+</tool>
