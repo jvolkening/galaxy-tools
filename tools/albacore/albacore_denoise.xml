@@ -1,4 +1,4 @@
-<tool id="albacore_denoise" name="Albacore Denoise" version="0.001">
+<tool id="albacore_denoise" name="Albacore de-noise" version="0.001">
 
     <description>Filter noise from barcode bins</description>
 
@@ -95,16 +95,11 @@
 
 **Description**
 
-Albacore is a tool for basecalling Oxford Nanopore reads. It is distributed by
-ONT to authorized community members only and thus is not packaged through
-Galaxy or Bioconda. End users are responsible for installing and testing the
-albacore software themselves and ensuring that it is in the galaxy user $PATH.
-
-The Galaxy wrapper has modified albacore to take a gzip tarball of FAST5 reads
-as input, such as can be produced by `poretools combine`, and always outputs a
-single FASTQ file.
-
-This is the 1D basecaller.
+This script will filter "noise" bins from the barcoded output of Albacore
+based on read counts and mean quality scores for each barcode bin. It can
+either filter the top N bins (if you know the number of barcodes in your
+sample) or filter based on minimum read count (as ratio to average value over
+all bin) and minimum average score.
 
     ]]>
     </help>
