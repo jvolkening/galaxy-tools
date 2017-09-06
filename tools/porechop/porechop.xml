@@ -133,7 +133,7 @@
     <outputs>
 
         <collection type="list" name="output">
-            <discover_datasets pattern="(?P&lt;name&gt;.*)" directory="out" format="fastq" />
+            <discover_datasets pattern="(?P&lt;name&gt;.*)" directory="out" format="fastqsanger" />
         </collection>
 
     </outputs>
