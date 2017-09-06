@@ -1,4 +1,4 @@
-<tool id="scrappie_raw" name="Scrappie (raw)" version="1.0.0">
+<tool id="scrappie_raw" name="Scrappie::raw" version="1.0.0">
 
     <description>ONT development basecaller</description>
 
