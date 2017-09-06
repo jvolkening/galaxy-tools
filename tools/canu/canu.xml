@@ -53,10 +53,10 @@
             <option value="-pacbio-corrected">pacbio corrected</option>
         </param>
         <param name="genome_size" type="text" size="5" label="Estimated genome size (e.g. 80m, 15k, 2g)" />
-        <param name="raw_error_rate" type="float" min="0" max="1" size="5" label="Maximum raw overlap mismatch (0-1)" />
-        <param name="corrected_error_rate" type="float" min="0" max="1" size="5" label="Maximum corrected overlap mismatch (0-1)" />
-        <param name="min_read_length" type="integer" min="1" size="5" label="Minimum read length" />
-        <param name="min_overlap" type="integer" min="1" size="5" label="Minimum overlap" />
+        <param name="raw_error_rate" type="float" value="0.500" min="0" max="1" size="5" label="Maximum raw overlap mismatch (0-1)" />
+        <param name="corrected_error_rate" type="float" value="0.144" min="0" max="1" size="5" label="Maximum corrected overlap mismatch (0-1)" />
+        <param name="min_read_length" type="integer" value="1000" min="1" size="5" label="Minimum read length" />
+        <param name="min_overlap" type="integer" value="500" min="1" size="5" label="Minimum overlap" />
 
     </inputs>
 
@@ -64,18 +64,21 @@
 
     <outputs>
 
-        <data name="output" format="fastq" label="${tool.name} on ${on_string} (reads.fastq)" />
+        <data name="contigs" format="fasta" from_work_dir="out_dir/canu_galaxy.contigs.fasta" label="${tool.name} on ${on_string} (contigs)" />
+        <data name="unitigs" format="fasta" from_work_dir="out_dir/canu_galaxy.unitigs.fasta" label="${tool.name} on ${on_string} (unitigs)" />
 
     </outputs>
 
     <!-- ***************************************************************** -->
 
+    <!--
     <tests>
         <test>
             <param name="input" value="test_data.fast5.tar.gz" ftype="fast5_archive" />
             <output name="output" file="test_data.fastq" compare="sim_size" delta="0"/>
         </test>
     </tests>
+    -->
 
     <!-- ***************************************************************** -->
 
