@@ -1,6 +1,6 @@
 <tool id="canu" name="Canu" version="1.6">
 
-    <description>Re-call consensus and variants from raw signal</description>
+    <description>Assembler optimized for long error-prone reads</description>
 
     <!-- ***************************************************************** -->
    
