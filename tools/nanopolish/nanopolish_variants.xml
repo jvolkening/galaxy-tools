@@ -46,7 +46,7 @@
     <inputs>
 
         <param name="input_reads" type="data" format="fasta" label="Input reads (FASTA)" />
-        <param name="input_fast5" type="data" format="fast5_archive" label="Input reads (FAST5)" />
+        <param name="input_fast5" type="data" format="fast5.tar" label="Input reads (FAST5)" />
         <param name="input_bam"   type="data" format="bam"   label="Alignment" />
         <param name="input_ref"   type="data" format="fasta" label="Reference" />
         <param name="min_candidate_frequency" type="float" value="0.2" size="5" label="Minimum candidate frequency" />

@@ -46,7 +46,7 @@
 
     <inputs>
 
-        <param name="inputs" type="data_collection" collection_type="list" format="fast5_archive" label="Input reads" multiple="true" />
+        <param name="inputs" type="data_collection" collection_type="list" format="fast5.tar" label="Input reads" multiple="true" />
         <param name="table" type="data" format="tabular" label="Read table" />
         <conditional name="filter">
             <param name="type" type="select" label="Filtering type">
@@ -70,7 +70,7 @@
     <outputs>
 
         <collection type="list" name="outputs" label="${tool.name} on ${on_string} (reads)">
-            <discover_datasets pattern="(?P&lt;name&gt;.*)\.fast5\.tar\.gz$" directory="outputs" format="fast5_archive" />
+            <discover_datasets pattern="(?P&lt;name&gt;.*)\.fast5\.tar\.gz$" directory="outputs" format="fast5.tar.gz" />
         </collection>
 
         <data name="summary" format="tabular" label="${tool.name} on ${on_string} (summary)" />
@@ -79,14 +79,8 @@
 
     <!-- ***************************************************************** -->
 
-    <!--
     <tests>
-        <test>
-            <param name="input" value="test_data.fast5.tar.gz" ftype="fast5_archive" />
-            <output name="output" file="test_data.fastq" compare="diff" />
-        </test>
     </tests>
-    -->
 
     <!-- ***************************************************************** -->
 

@@ -28,7 +28,7 @@
 
     <inputs>
 
-        <param name="input" type="data" format="fast5_archive" label="Input reads" />
+        <param name="input" type="data" format="fast5.tar" label="Input reads" />
         <param name="out_format" type="select" label="Output format">
             <option value="fastq" selected="true">fastq</option>
             <option value="fasta">fasta</option>
@@ -52,7 +52,7 @@
 
     <tests>
         <test>
-            <param name="input" value="test_data.fast5.tar.gz" ftype="fast5_archive" />
+            <param name="input" value="test_data.fast5.tar.gz" ftype="fast5.tar.gz" />
             <output name="output" file="test_data.fastq" compare="sim_size" delta="0"/>
         </test>
     </tests>
