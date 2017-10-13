@@ -31,12 +31,16 @@ def main():
         "--reads_per_fastq_batch", "999999999" ] +
         ["--barcoding"] * demux )
 
+    out_path = "out_dir/workspace"
+    pass_path = os.path.join( out_path, "pass" )
+    if os.path.exists( pass_path ):
+        out_path = pass_path
     if demux:
         #check for demuxed albacore output and copy to Galaxy output
         final_dir = "final"
         if not os.path.exists(final_dir):
             os.makedirs(final_dir)
-        dirs = glob.glob("out_dir/workspace/*")
+        dirs = glob.glob( os.path.join(out_path, "*") )
         for d in dirs:
 
             if out_fmt == 'fastq':
@@ -51,11 +55,16 @@ def main():
                 shutil.copy(found_file, out)
 
             elif out_fmt == 'fast5':
-                bc = os.path.basename( os.path.normpath( d ) ) + ".fast5.tar.gz"
-                print(d)
-                print(bc)
+                if (os.path.isfile(d)):
+                    if (d.endswith('.fast5')):
+                        bc = os.path.basename( os.path.normpath(d) ) + ".tar.gz"
+                        files = [d]
+                    else:
+                        continue
+                else:
+                    bc = os.path.basename( os.path.normpath( d ) ) + ".fast5.tar.gz"
+                    files = glob.glob( os.path.join( d, "**", "*.fast5"), recursive=True)
                 out = os.path.join( final_dir, bc )
-                files = glob.glob( os.path.join( d, "**", "*.fast5"), recursive=True)
                 if len(files) < 1:
                     raise ValueError('No FAST5 output files found')
                 tar = tarfile.open(out, 'w:gz')
@@ -68,18 +77,18 @@ def main():
     else:
         if out_fmt == 'fastq':
             #check for single albacore output and copy to Galaxy output
-            files = glob.glob("out_dir/workspace/*.fastq")
+            files = glob.glob( os.path.join(out_path, "*.fastq") )
             if len(files) != 1:
                 raise ValueError('No or multiple FASTQ output files found')
             found_file = files[0]
             shutil.copy(found_file, out_file)
         elif out_fmt == 'fast5':
             #check for single albacore output and copy to Galaxy output
-            files = glob.glob("out_dir/workspace/**/*.fast5", recursive=True)
+            files = glob.glob( os.path.join(out_path,"**","*.fast5"), recursive=True )
             if len(files) < 1:
                 raise ValueError('No FAST5 output files found')
             tar = tarfile.open(out_file, 'w:gz')
-            tar.add("out_dir/workspace")
+            tar.add(out_path)
             tar.close()
         else:
             raise ValueError('Bad output format specified')
@@ -97,6 +106,7 @@ def parse_meta(fn):
         # default, so it's easier/safer here just to call the system tar
         subprocess.call([
             "tar",
+            "--warning=no-unknown-keyword",
             "-xf",
             fn,
             "-C",
