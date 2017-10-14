@@ -17,6 +17,7 @@ my $threads = 1;
 my $fn_outfile;
 my $fn_consensus;
 my $fn_fast5;
+my $fn_reads;
 
 # remember full command string (with proper binary)
 
@@ -27,26 +28,40 @@ GetOptions(
     'outfile=s'   => \$fn_outfile,
     'consensus=s' => \$fn_consensus,
     'fast5=s'     => \$fn_fast5,
+    'reads=s'     => \$fn_reads,
 );
 
 my $tmp_dir = 'tmp_dir';
 mkdir $tmp_dir;
 
-#extract FAST5 files to path where they are expected
-my $in_dir = 'in_dir';
-mkdir $in_dir;
+$fn_fast5 = abs_path($fn_fast5);
+
+# extract FAST5 files to path where they are expected
+my $fast5_dir = 'fast5';
+mkdir $fast5_dir;
 my $cwd = abs_path( getcwd() );
-chdir $in_dir;
+chdir $fast5_dir;
 my $tar = Archive::Tar->new();
 $tar->read($fn_fast5);
 $tar->extract();
+say "done extracting $fn_fast5 here";
 chdir $cwd;
+
+
+# index reads
+my $ret = system(
+    'nanopolish',
+    'index',
+    '--directory' => $fast5_dir,
+    $fn_reads,
+);
+die "Failed nanopolish indexing: $!\n"
+    if ($ret);
 
 my @cmd = @ARGV;
 unshift @cmd, 'nanopolish';
 push @cmd, '--genome', $fn_genome;
-
-say join ' ', @cmd;
+push @cmd, '--reads', $fn_reads;
 
 my @regions :shared;
 
@@ -116,7 +131,6 @@ sub run {
         push @cmd_local, '--consensus', $fn_cons;
 
         my $ret = system @cmd_local;
-        warn "RET: $ret ($!)\n";
 
         my $cmd_string = join ' ', @cmd_local;
         die "Non-zero exit value for command: $cmd_string\n"

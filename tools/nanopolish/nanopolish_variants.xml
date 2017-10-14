@@ -30,7 +30,7 @@
         --consensus $out_consensus
         --outfile   $out_variants
         --threads \${GALAXY_SLOTS:-1}
-        --max-round $max_rounds
+        --max-rounds $max_rounds
         --max-haplotypes $max_haplotypes
         --min-candidate-depth $min_candidate_depth
         --min-candidate-frequency $min_candidate_frequency
@@ -87,7 +87,7 @@ The Galaxy wrapper has modified nanopolish to take a gzip tarball of FAST5 reads
 as input, such as can be produced by `poretools combine`, and always outputs a
 single FASTQ file.
 
-This is the `extract` module.
+This is the `variants` module.
 
     ]]>
     </help>
