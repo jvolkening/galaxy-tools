@@ -35,12 +35,6 @@
             --output "out/$filename"
         #end if
 
-        ##if $input.is_of_type('fastq')
-            --format fastq
-        ##else:
-            ##--format fasta
-        ##end if
-
         --threads  \${GALAXY_SLOTS:-1}
 
     ##--Demultiplex Options--------------------------
@@ -146,14 +140,14 @@
 
         <collection type="list" name="output_collection_fastq" label="${tool.name} on ${on_string}">
             <filter>out_format == 'fastq'</filter>
-            <discover_datasets pattern="(?P&lt;name&gt;.*)" directory="out" format="fastqsanger" />
+            <discover_datasets pattern="__designation_and_ext__" directory="out" format="fastqsanger" />
         </collection>
         <collection type="list" name="output_collection_fasta" label="${tool.name} on ${on_string}">
             <filter>out_format == 'fasta'</filter>
-            <discover_datasets pattern="(?P&lt;name&gt;.*)" directory="out" format="fasta" />
+            <discover_datasets pattern="__designation_and_ext__" directory="out" format="fasta" />
         </collection>
 
-        <data format="table" name="result_table" label="${tool.name} on ${on_string} (summary)" /> 
+        <data format="tabular" name="result_table" label="${tool.name} on ${on_string} (summary)" /> 
     </outputs>
 
     <!-- ***************************************************************** -->
