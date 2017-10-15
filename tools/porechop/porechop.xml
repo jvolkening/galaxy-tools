@@ -50,6 +50,7 @@
             --barcode_threshold $demux_section.demux_options.barcode_threshold
             --barcode_diff $demux_section.demux_options.barcode_diff
             $demux_section.demux_options.require_two_barcodes
+            $demux_section.demux_options.discard_unassigned
 
         #end if
 
@@ -106,6 +107,7 @@
                 <param argument="--barcode_threshold" size="5" type="float" value="75.0" min="0" max="100" label="Barcode threshold identity" />
                 <param argument="--barcode_diff" size="5" type="float" value="5.0" min="0" max="100" label="Barcode threshold difference" />
                 <param argument="--require_two_barcodes" type="boolean" truevalue="--require_two_barcodes" falsevalue="" checked="false" label="Require two barcodes" />
+                <param argument="--discard_unassigned" type="boolean" truevalue="--discard_unassigned" falsevalue="" checked="false" label="Discard unassigned reads" />
             </when>
             </conditional>
         </section>
