@@ -1,4 +1,4 @@
-<tool id="porechop" name="Porechop" version="0.2.1">
+<tool id="porechop" name="Porechop" version="0.2.2">
 
     <description>Demux and adapter removal</description>
 
@@ -162,7 +162,7 @@
         <test>
             <param name="input" value="test_barcodes.fastq" ftype="fastq" />
             <param name="demux" value="yes" />
-            <output_collection name="output_collection_fastq" type="list">
+            <output_collection name="output_collection_fastq" type="list" count="4">
                 <element name="BC01.fastq" file="bar1/BC01.fastq" compare="diff" decompress="true"/>
                 <element name="BC02.fastq" file="bar1/BC02.fastq" compare="diff" decompress="true"/>
                 <element name="BC03.fastq" file="bar1/BC03.fastq" compare="diff" decompress="true"/>
@@ -173,7 +173,7 @@
             <param name="input" value="test_barcodes.fastq" ftype="fastq" />
             <param name="demux" value="yes" />
             <param name="require_two_barcodes" value="True" />
-            <output_collection name="output_collection_fastq" type="list">
+            <output_collection name="output_collection_fastq" type="list" count="4">
                 <element name="BC01.fastq" file="bar2/BC01.fastq" compare="diff" decompress="true"/>
                 <element name="BC02.fastq" file="bar2/BC02.fastq" compare="diff" decompress="true"/>
                 <element name="BC03.fastq" file="bar2/BC03.fastq" compare="diff" decompress="true"/>
@@ -184,11 +184,11 @@
             <param name="input" value="test_barcodes.fastq" ftype="fastq" />
             <param name="demux" value="yes" />
             <param name="trim" value="yes" />
-            <output_collection name="output_collection_fastq" type="list">
+            <param name="discard_unassigned" value="yes" />
+            <output_collection name="output_collection_fastq" type="list" count="3">
                 <element name="BC01.fastq" file="bar1_trim/BC01.fastq" compare="diff" decompress="true"/>
                 <element name="BC02.fastq" file="bar1_trim/BC02.fastq" compare="diff" decompress="true"/>
                 <element name="BC03.fastq" file="bar1_trim/BC03.fastq" compare="diff" decompress="true"/>
-                <element name="none.fastq" file="bar1_trim/none.fastq" compare="diff" decompress="true"/>
             </output_collection>
         </test>
     </tests>
