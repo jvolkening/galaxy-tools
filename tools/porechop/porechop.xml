@@ -27,6 +27,8 @@
 
         --input ${input}
 
+        --format ${out_format}
+
         #if str($demux_section.demux_options.demux) == "yes":
             --barcode_dir out
         #else:
@@ -76,6 +78,9 @@
 
         #end if
 
+        | perl $__tool_directory__/porechop_summarize.pl
+        > $result_table
+
     ]]>
     </command>
 
@@ -84,6 +89,11 @@
     <inputs>
 
         <param argument="--input" type="data" format="fastq,fasta" label="Input reads" />
+
+        <param name="out_format" type="select" label="Output format">
+            <option value="fastq" selected="true">fastq</option>
+            <option value="fasta">fasta</option>
+        </param>
 
         <section name="demux_section" title="Demultiplexing Options" expanded="True">
             <conditional name="demux_options">
@@ -132,10 +142,16 @@
 
     <outputs>
 
-        <collection type="list" name="output">
+        <collection type="list" name="output_collection_fastq" label="${tool.name} on ${on_string}">
+            <filter>out_format == 'fastq'</filter>
             <discover_datasets pattern="(?P&lt;name&gt;.*)" directory="out" format="fastqsanger" />
         </collection>
+        <collection type="list" name="output_collection_fasta" label="${tool.name} on ${on_string}">
+            <filter>out_format == 'fasta'</filter>
+            <discover_datasets pattern="(?P&lt;name&gt;.*)" directory="out" format="fasta" />
+        </collection>
 
+        <data format="table" name="result_table" label="${tool.name} on ${on_string} (summary)" /> 
     </outputs>
 
     <!-- ***************************************************************** -->
@@ -144,7 +160,7 @@
         <test>
             <param name="input" value="test_barcodes.fastq" ftype="fastq" />
             <param name="demux" value="yes" />
-            <output_collection name="output" type="list">
+            <output_collection name="output_collection_fastq" type="list">
                 <element name="BC01.fastq" file="bar1/BC01.fastq" compare="diff" decompress="true"/>
                 <element name="BC02.fastq" file="bar1/BC02.fastq" compare="diff" decompress="true"/>
                 <element name="BC03.fastq" file="bar1/BC03.fastq" compare="diff" decompress="true"/>
@@ -155,7 +171,7 @@
             <param name="input" value="test_barcodes.fastq" ftype="fastq" />
             <param name="demux" value="yes" />
             <param name="require_two_barcodes" value="True" />
-            <output_collection name="output" type="list">
+            <output_collection name="output_collection_fastq" type="list">
                 <element name="BC01.fastq" file="bar2/BC01.fastq" compare="diff" decompress="true"/>
                 <element name="BC02.fastq" file="bar2/BC02.fastq" compare="diff" decompress="true"/>
                 <element name="BC03.fastq" file="bar2/BC03.fastq" compare="diff" decompress="true"/>
@@ -166,7 +182,7 @@
             <param name="input" value="test_barcodes.fastq" ftype="fastq" />
             <param name="demux" value="yes" />
             <param name="trim" value="yes" />
-            <output_collection name="output" type="list">
+            <output_collection name="output_collection_fastq" type="list">
                 <element name="BC01.fastq" file="bar1_trim/BC01.fastq" compare="diff" decompress="true"/>
                 <element name="BC02.fastq" file="bar1_trim/BC02.fastq" compare="diff" decompress="true"/>
                 <element name="BC03.fastq" file="bar1_trim/BC03.fastq" compare="diff" decompress="true"/>
