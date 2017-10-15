@@ -12,6 +12,7 @@ my $fn_in;
 my $fn_out;
 my $tgt_depth = 100;
 my $min_len   = 1;
+my $name;
 
 our $VERSION = 0.001;
 
@@ -20,15 +21,26 @@ GetOptions(
     'out=s'        => \$fn_out,
     'depth=i'      => \$tgt_depth,
     'min_length=i' => \$min_len,
+    'name=s'       => \$name,
     'version'      => sub{ say $VERSION; exit; },
 );
 
+# input validation and cleanup
 die "Failed to find or read input file\n"
     if (! -r $fn_in);
 
 die "Output path failed taint check\n"
     if ($fn_out =~ /( \.\. | \| | ; | > | \& )/);
 
+if (defined $name) {
+    $name =~ s/\.(?: fq | fastq | fa | fasta )//ix;
+}
+if (! defined $name || ! length $name) {
+    $name = 'consensus';
+}
+
+
+# count seqs
 my $p = BioX::Seq::Stream->new($fn_in);
 my $n_seq;
 while (my $seq = $p->next_seq) {
@@ -36,13 +48,39 @@ while (my $seq = $p->next_seq) {
     ++$n_seq;
 }
 
-my $aligned = File::Temp->new(CLEANUP => 1);
-
-open my $mafft, '|-',
-    "mafft --localpair --maxiterate 1000 --adjustdirection --op 0.1 --lop -0.1 --quiet - > $aligned";
-
 
 $p = BioX::Seq::Stream->new($fn_in);
+
+
+# if fewer than two sequences, just return seqs passed in
+if ($n_seq < 2) {
+    open my $out, '>', $fn_out;
+    while (my $seq = $p->next_seq) {
+        $seq->id = $name;
+        print {$out} $seq->as_fasta;
+    }
+    close $out;
+    exit;
+}
+
+
+# generate alignment
+
+my $aligned = File::Temp->new(CLEANUP => 1);
+
+my @cmd = (
+    'mafft',
+    '--localpair',
+    '--adjustdirection',
+    '--maxiterate' => '1000',
+    '--op'         => '0.1',
+    '--lop'        => '-0.1',
+    '--quiet',
+    '-',
+    "> $aligned",
+);
+
+open my $mafft, '|-', join( ' ', @cmd );
 
 while (my $seq = $p->next_seq) {
     next if (length($seq) < $min_len);
@@ -51,6 +89,7 @@ while (my $seq = $p->next_seq) {
 }
 
 close $mafft;
+
 
 # calculate consensus
 
@@ -83,8 +122,11 @@ for my $i (0..$l-1) {
 
 }
 
+# print output
+
 open my $out, '>', $fn_out;
-my $seq = BioX::Seq->new( $cons, 'consensus' );
+my $seq = BioX::Seq->new( $cons, $name );
 print {$out} $seq->as_fasta;
+close $out;
 
 exit;

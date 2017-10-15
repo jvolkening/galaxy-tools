@@ -17,6 +17,7 @@
         --out        $out
         --min_length $min_length
         --depth      $depth
+        --name       ${in.name}
 
     ]]>
     </command>
