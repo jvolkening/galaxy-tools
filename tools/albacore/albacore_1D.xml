@@ -68,7 +68,7 @@
     <tests>
         <test>
             <param name="input" value="test_data.fast5.tar.gz" ftype="fast5.tar.gz" />
-            <output name="output" file="test_data.fastq" compare="diff" />
+            <output name="output" file="test_data.fastq" compare="sim_size" delta="0"/>
         </test>
     </tests>
 
