@@ -50,28 +50,25 @@
 
     ##--Adapter Trim Options--------------------------
 
-        #if str($trim_section.trim_options.trim) == "yes":
-
-            --adapter_threshold $trim_section.trim_options.adapter_threshold
-            --check_reads $trim_section.trim_options.check_reads
-            --scoring_scheme $trim_section.trim_options.scoring_scheme
-
-            --end_size $trim_section.trim_options.end_size
-            --end_threshold $trim_section.trim_options.end_threshold
-            --min_trim_size $trim_section.trim_options.min_trim_size
-            --extra_end_trim $trim_section.trim_options.extra_end_trim
-
-            $trim_section.trim_options.discard_middle
-            --middle_threshold $trim_section.trim_options.middle_threshold
-            --extra_middle_trim_good_side $trim_section.trim_options.extra_middle_trim_good_side
-            --extra_middle_trim_bad_side $trim_section.trim_options.extra_middle_trim_bad_side
-            --min_split_read_size $trim_section.trim_options.min_split_read_size
-
-
-        #else:
+        #if str($trim_section.trim) == "no":
             --untrimmed
-
         #end if
+
+            --adapter_threshold $adapter_section.adapter_threshold
+            --check_reads $adapter_section.check_reads
+            --scoring_scheme $adapter_section.scoring_scheme
+
+            --end_size $adapter_section.end_size
+            --end_threshold $adapter_section.end_threshold
+            --min_trim_size $adapter_section.min_trim_size
+            --extra_end_trim $adapter_section.extra_end_trim
+
+            $adapter_section.discard_middle
+            --middle_threshold $adapter_section.middle_threshold
+            --extra_middle_trim_good_side $adapter_section.extra_middle_trim_good_side
+            --extra_middle_trim_bad_side $adapter_section.extra_middle_trim_bad_side
+            --min_split_read_size $adapter_section.min_split_read_size
+
 
         | perl $__tool_directory__/porechop_summarize.pl
         > $result_table
@@ -107,29 +104,25 @@
         </section>
 
         <section name="trim_section" title="Trimming Options" expanded="True">
-            <conditional name="trim_options">
             <param name="trim" type="select" label="Perform adapter trimming" help="">
                 <option value="no" selected="true">no</option>
                 <option value="yes">yes</option>
             </param>
-            <when value="no" />
-            <when value="yes">
-                <param argument="--adapter_threshold" size="4" type="float" value="90.0" min="0" max="100" label="Adapter set threshold identity" />
-                <param argument="--check_reads" size="7" type="integer" value="10000" label="Number of reads to check to determine adapter sets" />
-                <param argument="--barcode_diff" size="4" type="float" value="5.0" min="0" max="100" label="Barcode threshold difference" />
-                <param argument="--scoring_scheme" type="text" value="3,-6,-5,-2" label="Scoring scheme" />
-                <param argument="--end_size" size="4" type="integer" value="150" label="Number of terminal bases to search" />
-                <param argument="--min_trim_size" size="4" type="integer" value="4" label="Minimum adapter match length" />
-                <param argument="--extra_end_trim" size="4" type="integer" value="2" label="Adjacent bases to trim " />
-                <param argument="--end_threshold" size="4" type="float" value="75.0" min="0" max="100" label="End adapter trim threshold identity" />
+        </section>
+        <section name="adapter_section" title="Adapter Options" expanded="False">
+            <param argument="--adapter_threshold" size="4" type="float" value="90.0" min="0" max="100" label="Adapter set threshold identity" />
+            <param argument="--check_reads" size="7" type="integer" value="10000" label="Number of reads to check to determine adapter sets" />
+            <param argument="--scoring_scheme" type="text" value="3,-6,-5,-2" label="Scoring scheme" />
+            <param argument="--end_size" size="4" type="integer" value="150" label="Number of terminal bases to search" />
+            <param argument="--min_trim_size" size="4" type="integer" value="4" label="Minimum adapter match length" />
+            <param argument="--extra_end_trim" size="4" type="integer" value="2" label="Adjacent bases to trim " />
+            <param argument="--end_threshold" size="4" type="float" value="75.0" min="0" max="100" label="End adapter trim threshold identity" />
 
-                <param argument="--discard_middle" type="boolean" truevalue="--discard_middle" falsevalue="" checked="false" label="Discard reads with middle adapters" />
-                <param argument="--middle_threshold" size="4" type="float" value="85.0" min="0" max="100" label="Middle adapter trim threshold identity" />
-                <param argument="--extra_middle_trim_good_side" size="4" type="integer" value="10" label="Adjacent bases to trim on good side" />
-                <param argument="--extra_middle_trim_bad_side" size="4" type="integer" value="100" label="Adjacent bases to trim on bad side" />
-                <param argument="--min_split_read_size" size="4" type="integer" value="1000" label="Minimum length of split reads to keep" />
-            </when>
-            </conditional>
+            <param argument="--discard_middle" type="boolean" truevalue="--discard_middle" falsevalue="" checked="false" label="Discard reads with middle adapters" />
+            <param argument="--middle_threshold" size="4" type="float" value="85.0" min="0" max="100" label="Middle adapter trim threshold identity" />
+            <param argument="--extra_middle_trim_good_side" size="4" type="integer" value="10" label="Adjacent bases to trim on good side" />
+            <param argument="--extra_middle_trim_bad_side" size="4" type="integer" value="100" label="Adjacent bases to trim on bad side" />
+            <param argument="--min_split_read_size" size="4" type="integer" value="1000" label="Minimum length of split reads to keep" />
         </section>
 
     </inputs>
@@ -157,10 +150,10 @@
             <param name="input" value="test_barcodes.fastq" ftype="fastq" />
             <param name="demux" value="yes" />
             <output_collection name="output_collection_fastq" type="list" count="4">
-                <element name="BC01.fastq" file="bar1/BC01.fastq" compare="diff" decompress="true"/>
-                <element name="BC02.fastq" file="bar1/BC02.fastq" compare="diff" decompress="true"/>
-                <element name="BC03.fastq" file="bar1/BC03.fastq" compare="diff" decompress="true"/>
-                <element name="none.fastq" file="bar1/none.fastq" compare="diff" decompress="true"/>
+                <element name="BC01" file="bar1/BC01.fastq" compare="diff" decompress="true"/>
+                <element name="BC02" file="bar1/BC02.fastq" compare="diff" decompress="true"/>
+                <element name="BC03" file="bar1/BC03.fastq" compare="diff" decompress="true"/>
+                <element name="none" file="bar1/none.fastq" compare="diff" decompress="true"/>
             </output_collection>
         </test>
         <test>
@@ -168,10 +161,10 @@
             <param name="demux" value="yes" />
             <param name="require_two_barcodes" value="True" />
             <output_collection name="output_collection_fastq" type="list" count="4">
-                <element name="BC01.fastq" file="bar2/BC01.fastq" compare="diff" decompress="true"/>
-                <element name="BC02.fastq" file="bar2/BC02.fastq" compare="diff" decompress="true"/>
-                <element name="BC03.fastq" file="bar2/BC03.fastq" compare="diff" decompress="true"/>
-                <element name="none.fastq" file="bar2/none.fastq" compare="diff" decompress="true"/>
+                <element name="BC01" file="bar2/BC01.fastq" compare="diff" decompress="true"/>
+                <element name="BC02" file="bar2/BC02.fastq" compare="diff" decompress="true"/>
+                <element name="BC03" file="bar2/BC03.fastq" compare="diff" decompress="true"/>
+                <element name="none" file="bar2/none.fastq" compare="diff" decompress="true"/>
             </output_collection>
         </test>
         <test>
@@ -180,9 +173,9 @@
             <param name="trim" value="yes" />
             <param name="discard_unassigned" value="yes" />
             <output_collection name="output_collection_fastq" type="list" count="3">
-                <element name="BC01.fastq" file="bar1_trim/BC01.fastq" compare="diff" decompress="true"/>
-                <element name="BC02.fastq" file="bar1_trim/BC02.fastq" compare="diff" decompress="true"/>
-                <element name="BC03.fastq" file="bar1_trim/BC03.fastq" compare="diff" decompress="true"/>
+                <element name="BC01" file="bar1_trim/BC01.fastq" compare="diff" decompress="true"/>
+                <element name="BC02" file="bar1_trim/BC02.fastq" compare="diff" decompress="true"/>
+                <element name="BC03" file="bar1_trim/BC03.fastq" compare="diff" decompress="true"/>
             </output_collection>
         </test>
     </tests>
