@@ -25,11 +25,19 @@
         -p canu_galaxy
         -d out_dir
         useGrid=false
-        genomeSize=$genome_size
-        rawErrorRate=$raw_error_rate
-        correctedErrorRate=$corrected_error_rate
-        minReadLength=$min_read_length
-        minOverlapLength=$min_overlap
+        genomeSize=$genomeSize
+        rawErrorRate=$rawErrorRate
+        correctedErrorRate=$correctedErrorRate
+        minReadLength=$minReadLength
+        minOverlapLength=$minOverlapLength
+        corOutCoverage=$corOutCoverage
+        contigFilter="
+            ${contigFilter.minReads}
+            ${contigFilter.minLength}
+            ${contigFilter.singleReadSpan}
+            ${contigFilter.lowCovSpan}
+            ${contigFilter.lowCovDepth}
+        "
         minThreads=\${GALAXY_SLOTS:-1}
         maxThreads=\${GALAXY_SLOTS:-1}
         gnuplotTested=true
@@ -52,11 +60,20 @@
             <option value="-nanopore-corrected">nanopore corrected</option>
             <option value="-pacbio-corrected">pacbio corrected</option>
         </param>
-        <param name="genome_size" type="text" size="5" label="Estimated genome size (e.g. 80m, 15k, 2g)" />
-        <param name="raw_error_rate" type="float" value="0.500" min="0" max="1" size="5" label="Maximum raw overlap mismatch (0-1)" />
-        <param name="corrected_error_rate" type="float" value="0.144" min="0" max="1" size="5" label="Maximum corrected overlap mismatch (0-1)" />
-        <param name="min_read_length" type="integer" value="1000" min="1" size="5" label="Minimum read length" />
-        <param name="min_overlap" type="integer" value="500" min="1" size="5" label="Minimum overlap" />
+        <param argument="genomeSize" type="text" size="5" label="Estimated genome size (e.g. 80m, 15k, 2g)" />
+        <param argument="rawErrorRate" type="float" value="0.500" min="0" max="1" size="5" label="Maximum raw overlap mismatch (0-1)" />
+        <param argument="correctedErrorRate" type="float" value="0.144" min="0" max="1" size="5" label="Maximum corrected overlap mismatch (0-1)" />
+        <param argument="minReadLength" type="integer" value="1000" min="1" size="5" label="Minimum read length" />
+        <param argument="minOverlapLength" type="integer" value="500" min="1" size="5" label="Minimum overlap" />
+        <param argument="corOutCoverage" type="integer" value="40" min="1" size="5" label="Target coverage for corrected reads" />
+
+        <section name="contigFilter" title="Contig Filters">
+            <param argument="minReads" type="integer" value="2" min="0" label="Minimum reads" />
+            <param argument="minLength" type="integer" value="0" min="0" label="Minimum length" />
+            <param argument="singleReadSpan" type="float" value="1.0" min="0.0" max="1.0" label="Maximum single read span (fraction)" />
+            <param argument="lowCovSpan" type="float" value="0.5" min="0.0" max="1.0" label="Low coverage span (fraction)" />
+            <param argument="lowCovDepth" type="integer" value="5" min="0" label="Low coverage depth" />
+        </section>
 
     </inputs>
 
