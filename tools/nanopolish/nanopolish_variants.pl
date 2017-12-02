@@ -4,7 +4,6 @@ use strict;
 use warnings;
 use 5.012;
 
-use Archive::Tar;
 use Cwd qw/getcwd abs_path/;
 use File::Copy qw/copy/;
 use Getopt::Long qw/:config pass_through/;
@@ -31,25 +30,31 @@ GetOptions(
     'reads=s'     => \$fn_reads,
 );
 
+my $ret;
+
 my $tmp_dir = 'tmp_dir';
 mkdir $tmp_dir;
 
 $fn_fast5 = abs_path($fn_fast5);
 
 # extract FAST5 files to path where they are expected
+# use system 'tar' to transparently and safely handle absolute paths
 my $fast5_dir = 'fast5';
 mkdir $fast5_dir;
 my $cwd = abs_path( getcwd() );
 chdir $fast5_dir;
-my $tar = Archive::Tar->new();
-$tar->read($fn_fast5);
-$tar->extract();
-say "done extracting $fn_fast5 here";
+$ret = system(
+    'tar',
+    '-xvf',
+    $fn_fast5
+);
+die "Failed to extract tarball: $!\n"
+    if ($ret);
 chdir $cwd;
 
 
 # index reads
-my $ret = system(
+$ret = system(
     'nanopolish',
     'index',
     '--directory' => $fast5_dir,
