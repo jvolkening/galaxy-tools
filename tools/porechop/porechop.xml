@@ -131,6 +131,7 @@
 
     <outputs>
 
+        <!-- Demuxed -->
         <collection type="list" name="output_collection_fastq" label="${tool.name} on ${on_string}">
             <filter>out_format == 'fastq'</filter>
             <filter>demux_section['demux_options']['demux'] == 'yes'</filter>
@@ -141,6 +142,11 @@
             <filter>demux_section['demux_options']['demux'] == 'yes'</filter>
             <discover_datasets pattern="__designation_and_ext__" directory="out" format="fasta" />
         </collection>
+        <data format="tabular" name="result_table" label="${tool.name} on ${on_string} (summary)">
+            <filter>demux_section['demux_options']['demux'] == 'yes'</filter>
+        </data>
+
+        <!-- Not Demuxed -->
         <data format="fastq" name="ouput_fastq">
               <discover_datasets directory='out' pattern="(?P&lt;designation&gt;.+)" ext="fastq" visible="true" assign_primary_output="true" />
             <filter>out_format == 'fastq'</filter>
@@ -152,7 +158,6 @@
             <filter>demux_section['demux_options']['demux'] == 'no'</filter>
         </data>
 
-        <data format="tabular" name="result_table" label="${tool.name} on ${on_string} (summary)" /> 
     </outputs>
 
     <!-- ***************************************************************** -->
@@ -189,6 +194,13 @@
                 <element name="BC02" file="bar1_trim/BC02.fastq" compare="diff" decompress="true"/>
                 <element name="BC03" file="bar1_trim/BC03.fastq" compare="diff" decompress="true"/>
             </output_collection>
+        </test>
+        <test>
+            <param name="input" value="test_barcodes.fastq" ftype="fastq" />
+            <param name="demux" value="no" />
+            <param name="trim" value="yes" />
+            <param name="out_format" value="fasta" />
+            <output name="output_fasta" file="no_demux.fasta" compare="diff" />
         </test>
     </tests>
 
