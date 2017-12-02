@@ -69,7 +69,14 @@
     <!-- ***************************************************************** -->
 
     <tests>
-        <!-- TODO -->
+        <test>
+            <param name="input_reads" value="variants.reads.fa" ftype="fasta" />
+            <param name="input_fast5" value="variants.in.fast5.tar.bz2" ftype="fast5.tar.bz2" />
+            <param name="input_bam"   value="variants.bam" ftype="bam" />
+            <param name="input_ref"   value="variants.ref.fa" ftype="fasta" />
+            <param name="fix_homopolymers" value="True"/>
+            <output name="out_consensus" file="variants.out.fa" compare="diff" />
+        </test>
     </tests>
 
     <!-- ***************************************************************** -->
