@@ -133,12 +133,24 @@
 
         <collection type="list" name="output_collection_fastq" label="${tool.name} on ${on_string}">
             <filter>out_format == 'fastq'</filter>
+            <filter>demux_section['demux_options']['demux'] == 'yes'</filter>
             <discover_datasets pattern="__designation_and_ext__" directory="out" format="fastqsanger" />
         </collection>
         <collection type="list" name="output_collection_fasta" label="${tool.name} on ${on_string}">
             <filter>out_format == 'fasta'</filter>
+            <filter>demux_section['demux_options']['demux'] == 'yes'</filter>
             <discover_datasets pattern="__designation_and_ext__" directory="out" format="fasta" />
         </collection>
+        <data format="fastq" name="ouput_fastq">
+              <discover_datasets directory='out' pattern="(?P&lt;designation&gt;.+)" ext="fastq" visible="true" assign_primary_output="true" />
+            <filter>out_format == 'fastq'</filter>
+            <filter>demux_section['demux_options']['demux'] == 'no'</filter>
+        </data>
+        <data format="fasta" name="ouput_fasta">
+              <discover_datasets directory='out' pattern="(?P&lt;designation&gt;.+)" ext="fasta" visible="true" assign_primary_output="true" />
+            <filter>out_format == 'fasta'</filter>
+            <filter>demux_section['demux_options']['demux'] == 'no'</filter>
+        </data>
 
         <data format="tabular" name="result_table" label="${tool.name} on ${on_string} (summary)" /> 
     </outputs>
