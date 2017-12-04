@@ -1,4 +1,4 @@
-<tool id="nanopolish_extract" name="Nanopolish::extract" version="0.7.2">
+<tool id="nanopolish_extract" name="Nanopolish::extract" version="0.8.2">
 
     <description>FAST5 to FASTQ/A extraction</description>
 
