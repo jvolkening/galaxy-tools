@@ -57,6 +57,16 @@
         <data format="html" name="html_file" label="NanoporeQC on ${on_string}" />
     </outputs>
     <tests>
+        <test>
+            <param name="input" value="sequencing_summary.txt.small" ftype="tabular" />
+            <param name="q_cutoff" value="10" />
+            <output name="html_file" file="output.html.small.q10" compare="diff" />
+        </test>
+        <test>
+            <param name="input" value="sequencing_summary.txt.small" ftype="tabular" />
+            <param name="q_cutoff" value="6" />
+            <output name="html_file" file="output.html.small.q6" compare="diff" />
+        </test>
     </tests>
     <help>
 <![CDATA[
