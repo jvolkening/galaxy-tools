@@ -12,6 +12,7 @@ my $fn_in;
 my $fn_out;
 my $tgt_depth = 100;
 my $min_len   = 1;
+my $randomize = 0;
 my $name;
 
 our $VERSION = 0.001;
@@ -22,6 +23,7 @@ GetOptions(
     'depth=i'      => \$tgt_depth,
     'min_length=i' => \$min_len,
     'name=s'       => \$name,
+    'randomize'    => \$randomize,
     'version'      => sub{ say $VERSION; exit; },
 );
 
@@ -112,9 +114,10 @@ for my $i (0..$l-1) {
         ++$counts{$_};
     }
     my @srt = sort {$counts{$b} <=> $counts{$a}} keys %counts;
+    my $n_equal = grep {$counts{$_} == $counts{$srt[0]}} @srt;
 
-    my $c = scalar(@srt) == 1 ? $srt[0]
-          : $counts{$srt[0]} == $counts{$srt[1]} ? 'N'
+    my $c = $randomize   ? $srt[int(rand($n_equal))]
+          : $n_equal > 1 ? 'N'
           : $srt[0];
 
     $c = '' if ($c eq '-');
