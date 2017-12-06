@@ -18,6 +18,9 @@
         --min_length $min_length
         --depth      $depth
         --name       ${in.name}
+        #if str($randomize) == "yes":
+            --randomize
+        #end if
 
     ]]>
     </command>
