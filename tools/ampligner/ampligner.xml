@@ -47,6 +47,16 @@
     <!-- ***************************************************************** -->
 
     <tests>
+        <test>
+            <param name="in" value="in.fa" ftype="fasta" />
+            <param name="randomize" value="no" />
+            <output name="out" file="out.norand.fa" compare="diff" />
+        </test>
+        <test>
+            <param name="in" value="in.fa" ftype="fasta" />
+            <param name="randomize" value="yes" />
+            <output name="out" file="out.rand.fa" compare="diff" />
+        </test>
     </tests>
 
     <!-- ***************************************************************** -->
