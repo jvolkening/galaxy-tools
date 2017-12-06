@@ -13,8 +13,6 @@ use File::Temp;
 our $VERSION = 0.001;
 
 # inputs
-#my $fn_db;
-#my $fn_la;
 my $fn_in;
 my $sync_in;
 # outputs
@@ -34,8 +32,6 @@ my $ret; #can re-use
 
 
 GetOptions(
-    #'db=s'       => \$fn_db,
-    #'la=s'       => \$fn_la,
     'in=s'       => \$fn_in,
     'sync_in=s'  => \$sync_in,
     'out=s'      => \$dir_out,
@@ -100,6 +96,7 @@ while (my $seq = $p->next_seq) {
 }
 close $tmp_fa;
 
+
 # create DALIGNER database
 $ret = system(
     $fasta2DB,
@@ -137,6 +134,7 @@ open my $dump, '-|',
     "$db_name.$db_name.las",
 ;
 
+
 # parse summary line
 chomp( my $h1 = <$dump> );
 my ($op, $cat, $val) = split ' ', $h1;
@@ -152,6 +150,7 @@ my @tags = qw/P L C D/;
 my $aln = {};
 
 my $graph;
+
 
 # process alignment blocks
 while (my $line = <$dump>) {

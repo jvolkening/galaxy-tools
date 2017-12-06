@@ -4,14 +4,14 @@
 
     <!-- ***************************************************************** -->
    
-    <version_command>./la_clust --version</version_command>
+    <version_command>perl $__tool_directory__/la_clust</version_command>
 
     <!-- ***************************************************************** -->
 
-    <!--
+    <!-- The Bioconda package needs to be updated, but no recent Github release exists
     <requirements>
-        <requirement type="package" version="1.0">daligner</requirement>
-        <requirement type="package" version="1.0">dazz_db</requirement>
+        <requirement type="package" version="2.0">daligner</requirement>
+        <requirement type="package" version="2.0">dazz_db</requirement>
     </requirements>
     -->
 
@@ -85,13 +85,20 @@
     <!-- ***************************************************************** -->
 
     <tests>
+        <!-- TODO -->
     </tests>
 
     <!-- ***************************************************************** -->
 
     <help>
     <![CDATA[
-
+LAclust performs single-linkage clustering of nucleotide sequences based on
+alignment identity and length. Under the hood, it utilizes DALIGNER to perform
+an all v. all alignment between a set of sequences, and then clusters those
+sequences based on the cutoff values set for identity and alignment length. It
+is intended to fill a somewhat similar role to CD-HIT-EST but can handle a
+greater level of divergence between sequences, in order, for instance, to
+handle the high error rate of nanopore sequencing reads.
     ]]>
     </help>
 
