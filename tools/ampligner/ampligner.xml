@@ -18,9 +18,7 @@
         --min_length $min_length
         --depth      $depth
         --name       ${in.name}
-        #if str($randomize) == "yes":
-            --randomize
-        #end if
+        $randomize
 
     ]]>
     </command>
@@ -32,7 +30,7 @@
         <param name="in" type="data" format="fastq,fasta" label="Input reads" />
         <param name="min_length" type="integer" min="1" value="1" size="5" label="Minimum read length" />
         <param name="depth" type="integer" min="1" value="100" size="5" label="Target depth" />
-        <param name="randomize" type="boolean" truevalue="yes" falsevalue="no" checked="no" label="Randomize equal positions" />
+        <param name="randomize" type="boolean" truevalue="--randomize" falsevalue="" checked="no" label="Randomize equal positions" />
 
     </inputs>
 
