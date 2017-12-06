@@ -1,0 +1,357 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use 5.012;
+
+use BioX::Seq::Stream;
+use BioX::Seq::Fetch;
+use Getopt::Long;
+use File::Which qw/which/;
+use File::Temp;
+
+our $VERSION = 0.001;
+
+# inputs
+#my $fn_db;
+#my $fn_la;
+my $fn_in;
+my $sync_in;
+# outputs
+my $dir_out;
+my $sync_out;
+my $fn_sif;
+# parameters
+my $min_cov   = 0.90;
+my $max_diff  = 0.35;
+my $max_size  = 60;
+my $min_len   = 750;
+my $min_size  = 6;
+
+# global variables
+my $db_name = 'tmp';
+my $ret; #can re-use
+
+
+GetOptions(
+    #'db=s'       => \$fn_db,
+    #'la=s'       => \$fn_la,
+    'in=s'       => \$fn_in,
+    'sync_in=s'  => \$sync_in,
+    'out=s'      => \$dir_out,
+    'sync_out=s' => \$sync_out,
+    'sif=s'      => \$fn_sif,
+    'min_cov=f'  => \$min_cov,
+    'max_diff=f' => \$max_diff,
+    'min_len=i'  => \$min_len,
+    'min_size=i' => \$min_size,
+    'max_size=i' => \$max_size,
+    'version'    => sub{ say $VERSION; exit; },
+);
+
+my $DALIGNER = which('daligner')
+    // die "daligner not found. Check your DALIGNER install.\n";
+my $fasta2DB = which('fasta2DB')
+    // die "fasta2DB not found. Check your DAZZ_DB install.\n";
+my $LAdump = which('LAdump')
+    // die "LAdump not found. Check your DALIGNER install.\n";
+my $DBshow = which('DBshow')
+    // die "DBshow not found. Check your DAZZ_DB install.\n";
+
+die "Output directory not defined\n"
+    if (! defined $dir_out);
+die "Output directory exists and is not a directory\n"
+    if (-e $dir_out && ! -d $dir_out);
+mkdir $dir_out if (! -e $dir_out);
+die "Output directory exists and is not a directory\n"
+    if (-e $sync_out && ! -d $sync_out);
+mkdir $sync_out if (! -e $sync_out);
+
+
+# rename input sequences to PacBio-like format (for DALIGNER input)
+my $tmp_fa   = File::Temp->new(SUFFIX=>'.fasta');
+
+my $prefix;
+my $i = 0;
+
+my %name_map;
+
+my $p = BioX::Seq::Stream->new($fn_in);
+
+while (my $seq = $p->next_seq) {
+
+    if ($seq->desc =~ /runid=(\w+)/) {
+        die "Run ID mismatch\n"
+            if (defined $prefix && $prefix ne $1);
+        $prefix //= $1;
+    }
+    $prefix //= 'unknown_run';
+
+    my $new_id = sprintf "%s/%u/0_%u",
+        $prefix,
+        $i++,
+        length($seq),
+    ;
+    $name_map{$new_id} = $seq->id;
+    
+    $seq->id = $new_id;
+    print {$tmp_fa} $seq->as_fasta;
+
+}
+close $tmp_fa;
+
+# create DALIGNER database
+$ret = system(
+    $fasta2DB,
+    $db_name,
+    $tmp_fa
+);
+die "fasta2DB failed: $!\n" if ($ret);
+
+
+# run DALIGNER
+$ret = system(
+    $DALIGNER,
+    "-l$min_len",
+    "$db_name.db",
+    "$db_name.db",
+);
+die "daligner failed: $!\n" if ($ret);
+
+
+$p = BioX::Seq::Fetch->new("$tmp_fa")
+    or die "Error opening $tmp_fa for parsing: $@\n";
+my $p_sync = undef;
+if (defined $sync_in) {
+    $p_sync = BioX::Seq::Fetch->new("$sync_in")
+}
+
+my @seq_ids = $p->ids;
+my $n = scalar @seq_ids;
+
+open my $dump, '-|',
+    $LAdump,
+    '-cdl',
+    "$db_name.db",
+    "$db_name.db",
+    "$db_name.$db_name.las",
+;
+
+# parse summary line
+chomp( my $h1 = <$dump> );
+my ($op, $cat, $val) = split ' ', $h1;
+die "Unexpected input format\n"
+    if ($op ne '+' || $cat ne 'P');
+my $n_aligns = $val;
+
+# ignore second line (for now)
+my $h2 = <$dump>;
+
+my @tags = qw/P L C D/;
+
+my $aln = {};
+
+my $graph;
+
+# process alignment blocks
+while (my $line = <$dump>) {
+
+    chomp $line;
+    my ($cat, @vals) = split ' ', $line;
+
+    # consistency check
+    die "unexpected line order\n"
+        if ($cat ne $tags[0]);
+    push @tags, shift @tags;
+
+    $aln->{$cat} = \@vals;
+
+    # process completed alignment
+    if ($cat eq 'D') {
+        process_alignment($aln);
+        $aln = {};
+    }
+
+}
+
+
+# traverse graph
+my %assignments;
+my $node_id = 0;
+
+no warnings 'recursion';
+for my $key (keys %$graph) {
+    my $assigned = traverse($key, $node_id);
+    ++$node_id if ($assigned);
+}
+
+if (defined $fn_sif) {
+
+    my %seen;
+    open my $sif, '>', $fn_sif;
+    for my $x (keys %$graph) {
+
+        for my $y (keys %{ $graph->{$x} }) {
+
+            next if ($seen{"$x.$y"});
+            next if ($seen{"$y.$x"});
+            $seen{"$x.$y"} = 1;
+            say {$sif} join "\t",
+                $x,
+                'aln',
+                $y,
+            ;
+
+        }
+
+    }
+    close $sif;
+
+}
+        
+
+my %counts;
+my %cutoffs;
+my %written;
+my %fhs;
+my %fhs_sync;
+
+for my $key (sort {$a <=> $b} keys %assignments) {
+    my $clust = $assignments{$key};
+
+    # generate missing cluster counts
+    my @members;
+    if (! defined $counts{$clust}) {
+        @members = grep {$assignments{$_} == $clust} keys %assignments;
+        $counts{$clust} = scalar @members;
+    }
+
+    # short-circuit if cluster too small
+    next if ($counts{$clust} < $min_size);
+
+    # generate missing linkage cutoffs
+    if (! defined $cutoffs{$clust}) {
+        my @links   = map {scalar keys %{ $graph->{$_} } } @members;
+        @links = sort {$b <=> $a} @links;
+
+        my $n = $counts{$clust} > $max_size ? $max_size : $counts{$clust};
+        $cutoffs{$clust} = $links[$n-1];
+    }
+
+    # skip if linkage count < cutoff
+    my $n_links = scalar keys %{ $graph->{$key} };
+    next if ($n_links < $cutoffs{$clust});
+
+    if (! defined $fhs{$clust}) {
+        my $fn_out = sprintf "%s/cluster_%0*u.fasta",
+            $dir_out,
+            length($node_id),
+            $clust;
+        open my $fh, '>', $fn_out;
+        $fhs{$clust} = $fh;
+
+        # open sync handles if needed
+        if (defined $p_sync) {
+            my $fn_out = sprintf "%s/sync_%0*u.fasta",
+                $sync_out,
+                length($node_id),
+                $clust;
+            open my $fh, '>', $fn_out;
+            $fhs_sync{$clust} = $fh;
+        }
+            
+    }
+
+    # skip if cluster max size already reached
+    next if (defined $written{$clust} && $written{$clust} >= $max_size);
+
+    if (defined $p_sync) {
+
+        my $fh = $fhs_sync{$clust};
+        my $id = $seq_ids[$key];
+        my $mapped = $name_map{$id}
+            // die "Failed to find mapped ID for $id\n";
+        my $seq = $p_sync->fetch_seq($mapped)
+            // die "Failed to fetch sequence $mapped: $@\n";
+        print {$fh} $seq->as_fasta;
+
+    }
+
+    my $fh = $fhs{$clust};
+    my $id = $seq_ids[$key];
+    my $seq = $p->fetch_seq($id)
+        // die "Failed to fetch sequence $id: $@\n";
+    print {$fh} $seq->as_fasta;
+    ++$written{$clust};
+    
+}
+
+close $_ for (values %fhs);
+close $_ for (values %fhs_sync);
+
+for my $node (sort {$counts{$b} <=> $counts{$a}} keys %counts) {
+    say join "\t",
+        sprintf("cluster_%0*u", length($node_id), $node),
+        $counts{$node},
+    ;
+}
+
+unlink "$tmp_fa";
+unlink "$tmp_fa.fai";
+
+exit;
+
+sub traverse {
+
+    my ($key, $node) = @_;
+    return 0 if (defined $assignments{$key});
+    $assignments{$key} = $node;
+    my $n = 1;
+    for my $key2 (keys %{ $graph->{$key} }) {
+        $n += traverse($key2, $node);
+    }
+    return $n;
+
+}
+
+
+
+sub process_alignment {
+
+    my ($aln) = @_;
+
+    my $n1 = $aln->{P}->[0] - 1;
+    my $n2 = $aln->{P}->[1] - 1;
+
+    if ($n1 > $#seq_ids) {
+        die "N1 $n1 out of range\n";
+    }
+    if ($n2 > $#seq_ids) {
+        die "N2 $n2 out of range\n";
+    }
+
+    my $id1 = $seq_ids[$n1];
+    my $id2 = $seq_ids[$n2];
+
+    my $l1 = $aln->{L}->[0];
+    my $l2 = $aln->{L}->[1];
+
+    return if ($l1 < $min_len);
+    return if ($l2 < $min_len);
+
+    my @crd = @{ $aln->{C} };
+    my $al1 = $crd[1] - $crd[0];
+    my $al2 = $crd[3] - $crd[2];
+
+    return if ($al1 / $l1 < $min_cov);
+    return if ($al2 / $l2 < $min_cov);
+
+    my $d = $aln->{D}->[0] / ($al1+$al2) * 2;
+    return if ($d > $max_diff);
+
+    # register edge
+    $graph->{$n1}->{$n2} = 1;
+
+    return;
+
+}

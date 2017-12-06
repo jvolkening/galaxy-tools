@@ -1,0 +1,103 @@
+<tool id="la_clust" name="LAclust" version="0.001">
+
+    <description>Cluster sequences using DALIGNER</description>
+
+    <!-- ***************************************************************** -->
+   
+    <version_command>./la_clust --version</version_command>
+
+    <!-- ***************************************************************** -->
+
+    <!--
+    <requirements>
+        <requirement type="package" version="1.0">daligner</requirement>
+        <requirement type="package" version="1.0">dazz_db</requirement>
+    </requirements>
+    -->
+
+    <!-- ***************************************************************** -->
+
+    <command detect_errors="aggressive">
+    <![CDATA[
+
+    perl $__tool_directory__/la_clust
+
+        --in $in
+        --out out
+
+        #if str($sync_options.sync) == "yes":
+            --sync_in $sync_in
+            --sync_out sync_out
+        #end if
+
+        --min_len  $min_len
+        --min_cov  $min_cov
+        --min_size $min_size
+        --max_size $max_size
+        --max_diff $max_diff
+
+    > $result_table
+
+    ]]>
+    </command>
+
+    <!-- ***************************************************************** -->
+
+    <inputs>
+
+        <param name="in" type="data" format="fastq,fasta" label="Input reads" />
+        <param argument="--min_cov"  type="float" min="0" max="1" value="0.90" size="5" label="Minimum alignment coverage required (as fraction of read lengths)" />
+        <param argument="--max_diff" type="float" min="0" max="1" value="0.35" size="5" label="Maximum alignment difference allowed (as fraction of read lengths)" />
+        <param argument="--min_size" type="integer" min="0" value="6"   size="5" label="Minimum number of reads needed to save cluster" />
+        <param argument="--max_size" type="integer" min="0" value="60"  size="5" label="Maximum number of reads per cluster to save" />
+        <param argument="--min_len"  type="integer" min="0" value="500" size="5" label="Minimum read length to use" />
+
+        <conditional name="sync_options">
+        <param name="sync" type="select" label="Synchronize secondary file" help="">
+            <option value="no" selected="true">no</option>
+            <option value="yes">yes</option>
+        </param>
+        <when value="no" />
+        <when value="yes">
+            <param name="sync_in" type="data" format="fastq,fasta" label="Synchronized reads" />
+        </when>
+        </conditional>
+
+
+    </inputs>
+
+    <!-- ***************************************************************** -->
+
+    <outputs>
+
+        <collection type="list" name="output_collection_fasta" label="${tool.name} on ${on_string}">
+            <discover_datasets pattern="__designation_and_ext__" directory="out" format="fasta" />
+        </collection>
+        <collection type="list" name="output_collection_sync" label="${tool.name} on ${on_string} (sync files)">
+            <filter>sync_options['sync'] == 'yes'</filter>
+            <discover_datasets pattern="__designation_and_ext__" directory="sync_out" format="fasta" />
+        </collection>
+
+        <data format="tabular" name="result_table" label="${tool.name} on ${on_string} (summary)" /> 
+
+    </outputs>
+
+    <!-- ***************************************************************** -->
+
+    <tests>
+    </tests>
+
+    <!-- ***************************************************************** -->
+
+    <help>
+    <![CDATA[
+
+    ]]>
+    </help>
+
+    <!-- ***************************************************************** -->
+    
+    <citations>
+    </citations>
+
+</tool>
