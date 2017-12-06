@@ -1,4 +1,4 @@
-<tool id="la_clust" name="LAclust" version="0.001">
+<tool id="la_clust" name="LAclust" version="0.002">
 
     <description>Cluster sequences using DALIGNER</description>
 
@@ -62,7 +62,6 @@
             <param name="sync_in" type="data" format="fastq,fasta" label="Synchronized reads" />
         </when>
         </conditional>
-
 
     </inputs>
 

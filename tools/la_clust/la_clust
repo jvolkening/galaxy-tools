@@ -4,11 +4,15 @@ use strict;
 use warnings;
 use 5.012;
 
+use autodie;
+
 use BioX::Seq::Stream;
 use BioX::Seq::Fetch;
 use Getopt::Long;
 use File::Which qw/which/;
-use File::Temp;
+use File::Temp qw/tempfile/;
+use File::Basename qw/basename/;
+use List::Util qw/shuffle/;
 
 our $VERSION = 0.001;
 
@@ -27,8 +31,13 @@ my $min_len   = 750;
 my $min_size  = 6;
 
 # global variables
-my $db_name = 'tmp';
 my $ret; #can re-use
+
+# Use a temporary filename here as a semaphore, even though the actual file is
+# not used. This prevents problems with hard-coded temp filenames clashing
+# during simultaneous calls ( as happened with previous versions)
+my ($tmp_fh, $db_name) = tempfile();
+$db_name = basename($db_name);
 
 
 GetOptions(
@@ -70,8 +79,6 @@ my $tmp_fa   = File::Temp->new(SUFFIX=>'.fasta');
 my $prefix;
 my $i = 0;
 
-my %name_map;
-
 my $p = BioX::Seq::Stream->new($fn_in);
 
 while (my $seq = $p->next_seq) {
@@ -88,7 +95,6 @@ while (my $seq = $p->next_seq) {
         $i++,
         length($seq),
     ;
-    $name_map{$new_id} = $seq->id;
     
     $seq->id = $new_id;
     print {$tmp_fa} $seq->as_fasta;
@@ -116,8 +122,8 @@ $ret = system(
 die "daligner failed: $!\n" if ($ret);
 
 
-$p = BioX::Seq::Fetch->new("$tmp_fa")
-    or die "Error opening $tmp_fa for parsing: $@\n";
+$p = BioX::Seq::Fetch->new("$fn_in")
+    or die "Error opening $fn_in for parsing: $@\n";
 my $p_sync = undef;
 if (defined $sync_in) {
     $p_sync = BioX::Seq::Fetch->new("$sync_in")
@@ -184,6 +190,8 @@ for my $key (keys %$graph) {
     ++$node_id if ($assigned);
 }
 
+
+# write SIF file if necessary
 if (defined $fn_sif) {
 
     my %seen;
@@ -215,7 +223,8 @@ my %written;
 my %fhs;
 my %fhs_sync;
 
-for my $key (sort {$a <=> $b} keys %assignments) {
+for my $key (shuffle keys %assignments) {
+#for my $key (sort {$a <=> $b} keys %assignments) {
     my $clust = $assignments{$key};
 
     # generate missing cluster counts
@@ -261,20 +270,20 @@ for my $key (sort {$a <=> $b} keys %assignments) {
             
     }
 
-    # skip if cluster max size already reached
-    next if (defined $written{$clust} && $written{$clust} >= $max_size);
-
     if (defined $p_sync) {
 
         my $fh = $fhs_sync{$clust};
         my $id = $seq_ids[$key];
-        my $mapped = $name_map{$id}
-            // die "Failed to find mapped ID for $id\n";
-        my $seq = $p_sync->fetch_seq($mapped)
-            // die "Failed to fetch sequence $mapped: $@\n";
+        my $seq = $p_sync->fetch_seq($id)
+            // die "Failed to fetch sequence $id: $@\n";
         print {$fh} $seq->as_fasta;
 
     }
+
+    # skip if cluster max size already reached. This is done AFTER sync files
+    # are written, since sync files are not filtered to a target level
+    next if (defined $written{$clust} && $written{$clust} >= $max_size);
+
 
     my $fh = $fhs{$clust};
     my $id = $seq_ids[$key];
@@ -296,7 +305,6 @@ for my $node (sort {$counts{$b} <=> $counts{$a}} keys %counts) {
 }
 
 unlink "$tmp_fa";
-unlink "$tmp_fa.fai";
 
 exit;
 
@@ -328,9 +336,6 @@ sub process_alignment {
     if ($n2 > $#seq_ids) {
         die "N2 $n2 out of range\n";
     }
-
-    my $id1 = $seq_ids[$n1];
-    my $id2 = $seq_ids[$n2];
 
     my $l1 = $aln->{L}->[0];
     my $l2 = $aln->{L}->[1];
