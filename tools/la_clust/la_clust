@@ -19,6 +19,7 @@ our $VERSION = 0.001;
 # inputs
 my $fn_in;
 my $sync_in;
+my $fn_alb_table;
 # outputs
 my $dir_out;
 my $sync_out;
@@ -29,6 +30,12 @@ my $max_diff  = 0.35;
 my $max_size  = 60;
 my $min_len   = 750;
 my $min_size  = 6;
+my $sample_mode = 'random';
+
+my @allowed_modes = qw/
+    random
+    best
+/;
 
 # global variables
 my $ret; #can re-use
@@ -41,17 +48,19 @@ $db_name = basename($db_name);
 
 
 GetOptions(
-    'in=s'       => \$fn_in,
-    'sync_in=s'  => \$sync_in,
-    'out=s'      => \$dir_out,
-    'sync_out=s' => \$sync_out,
-    'sif=s'      => \$fn_sif,
-    'min_cov=f'  => \$min_cov,
-    'max_diff=f' => \$max_diff,
-    'min_len=i'  => \$min_len,
-    'min_size=i' => \$min_size,
-    'max_size=i' => \$max_size,
-    'version'    => sub{ say $VERSION; exit; },
+    'in=s'          => \$fn_in,
+    'sync_in=s'     => \$sync_in,
+    'alb_table=s'   => \$fn_alb_table,
+    'out=s'         => \$dir_out,
+    'sync_out=s'    => \$sync_out,
+    'sif=s'         => \$fn_sif,
+    'min_cov=f'     => \$min_cov,
+    'max_diff=f'    => \$max_diff,
+    'min_len=i'     => \$min_len,
+    'min_size=i'    => \$min_size,
+    'max_size=i'    => \$max_size,
+    'sample_mode=s' => \$sample_mode,
+    'version'       => sub{ say $VERSION; exit; },
 );
 
 my $DALIGNER = which('daligner')
@@ -71,6 +80,38 @@ mkdir $dir_out if (! -e $dir_out);
 die "Output directory exists and is not a directory\n"
     if (-e $sync_out && ! -d $sync_out);
 mkdir $sync_out if (! -e $sync_out);
+
+
+die "Must supply Albacore table for 'best' sample mode"
+    if ($sample_mode eq 'best' && ! defined $fn_alb_table);
+
+die "Failed to find or read Albacore table\n"
+    if (defined $fn_alb_table && ! -r $fn_alb_table);
+
+die "Bad sample mode $sample_mode\n"
+    if (! grep {$_ eq $sample_mode} @allowed_modes);
+
+
+# parse Albacore table if needed
+my %q_scores;
+if ($sample_mode eq 'best') {
+    open my $in, '<', $fn_alb_table;
+    my $h = <$in>;
+        chomp $h;
+    my @headers = split "\t", $h;
+    my $id_col = first_index {$_ eq 'read_id'} @headers;
+    die "Failed to find Q-score header in Albacore table\n"
+        if ($id_col < 0);
+    my $q_col  = first_index {$_ eq 'mean_qscore_template'} @headers;
+    die "Failed to find Q-score header in Albacore table\n"
+        if ($q_col < 0);
+    while (my $line = <$in>) {
+        chomp $line;
+        my @fields = split "\t", $line;
+        $q_scores{ $fields[$id_col] } = $fields[$q_col];
+    }
+    close $in;
+}
 
 
 # rename input sequences to PacBio-like format (for DALIGNER input)
@@ -218,7 +259,8 @@ if (defined $fn_sif) {
         
 
 my %counts;
-my %cutoffs;
+my %link_cutoffs;
+my %qual_cutoffs;
 my %written;
 my %fhs;
 my %fhs_sync;
@@ -237,18 +279,28 @@ for my $key (shuffle keys %assignments) {
     # short-circuit if cluster too small
     next if ($counts{$clust} < $min_size);
 
-    # generate missing linkage cutoffs
-    if (! defined $cutoffs{$clust}) {
+    # generate missing linkage cutoffs:
+    # when subsampling, nodes with higher numbers of links to other cluster
+    # nodes are given priority
+    if (! defined $link_cutoffs{$clust}) {
         my @links   = map {scalar keys %{ $graph->{$_} } } @members;
         @links = sort {$b <=> $a} @links;
 
         my $n = $counts{$clust} > $max_size ? $max_size : $counts{$clust};
-        $cutoffs{$clust} = $links[$n-1];
+        $link_cutoffs{$clust} = $links[$n-1];
     }
 
-    # skip if linkage count < cutoff
-    my $n_links = scalar keys %{ $graph->{$key} };
-    next if ($n_links < $cutoffs{$clust});
+    # generate missing quality cutoffs:
+    # when subsampling, nodes with higher quality scores are given priority
+    if (! defined $qual_cutoffs{$clust}) {
+        my @quals   = map {
+            $q_scores{ $seq_ids[$_] } // die "No qual score for $seq_ids[$_]"
+        } @members;
+        @quals = sort {$b <=> $a} @quals;
+
+        my $n = $counts{$clust} > $max_size ? $max_size : $counts{$clust};
+        $qual_cutoffs{$clust} = $quals[$n-1];
+    }
 
     if (! defined $fhs{$clust}) {
         my $fn_out = sprintf "%s/cluster_%0*u.fasta",
@@ -280,8 +332,20 @@ for my $key (shuffle keys %assignments) {
 
     }
 
-    # skip if cluster max size already reached. This is done AFTER sync files
-    # are written, since sync files are not filtered to a target level
+    # All of these filters are applied AFTER sync files are written, since
+    # sync files should not be filtered to a target level
+
+    # skip if linkage count < cutoff
+    my $n_links = scalar keys %{ $graph->{$key} };
+    next if ($n_links < $link_cutoffs{$clust});
+
+    if ($sample_mode eq 'best') {
+        # skip if quality < cutoff
+        my $q = $q_scores{ $seq_ids[$key] };
+        next if ($q < $qual_cutoffs{$clust});
+    }
+
+    # skip if cluster max size already reached.
     next if (defined $written{$clust} && $written{$clust} >= $max_size);
 
 

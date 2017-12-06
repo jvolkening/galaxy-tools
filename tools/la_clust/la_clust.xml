@@ -30,6 +30,12 @@
             --sync_out sync_out
         #end if
 
+        --sample_mode ${sample.mode}
+
+        #if str($sample.mode) == "best":
+            --alb_table $alb_in
+        #end if
+
         --min_len  $min_len
         --min_cov  $min_cov
         --min_size $min_size
@@ -60,6 +66,17 @@
         <when value="no" />
         <when value="yes">
             <param name="sync_in" type="data" format="fastq,fasta" label="Synchronized reads" />
+        </when>
+        </conditional>
+
+        <conditional name="sample">
+        <param name="mode" type="select" label="Sampling mode" help="">
+            <option value="random" selected="true">random</option>
+            <option value="best">highest quality</option>
+        </param>
+        <when value="random" />
+        <when value="best">
+            <param name="alb_in" type="data" format="tabular" label="Albacore summary table" />
         </when>
         </conditional>
 
