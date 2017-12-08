@@ -20,13 +20,17 @@
     <command detect_errors="aggressive">
     <![CDATA[
 
+    #if str($sync_options.sync) == "yes":
+        ln -s $sync_in sync.fa && 
+    #end if
+
     perl $__tool_directory__/la_clust
 
         --in $in
         --out out
 
         #if str($sync_options.sync) == "yes":
-            --sync_in $sync_in
+            --sync_in sync.fa
             --sync_out sync_out
         #end if
 
