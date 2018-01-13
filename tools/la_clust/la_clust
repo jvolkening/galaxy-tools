@@ -259,7 +259,7 @@ for my $key (shuffle keys %assignments) {
 
         # open sync handles if needed
         if (defined $p_sync) {
-            my $fn_out = sprintf "%s/sync_%0*u.fasta",
+            my $fn_out = sprintf "%s/cluster_%0*u.fasta",
                 $sync_out,
                 length($node_id),
                 $clust;
