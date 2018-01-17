@@ -19,32 +19,77 @@
 
     centrifuge
 
-        --input    '${fn_in}'
-        -x '${db.fields.path}'
+    ##--Output Options------------------------------
 
-        --threads  '\${GALAXY_SLOTS:-1}'
-        --outdir   './'
-        --prefix   results
+        --out-fmt      $outputs.out_fmt
+        --tab-fmt-cols $outputs.tab_fmt_cols
 
-    ##--General Options------------------------------
+    ##--General Options-----------------------------
 
-        --relAbu   ${general.rel_abund}
-        --mode ${general.output_full}
-        ${general.filt_plasmid}
+        --threads      \${GALAXY_SLOTS:-1}
 
-    ##--Split-trim Options---------------------------
+        #if $general.skip != "":
+            --skip $general.skip
+        #end if
+        #if $general.upto != "":
+            --upto $general.upto
+        #end if
+        #if $general.trim5 != "":
+            --trim5 $general.trim5
+        #end if
+        #if $general.trim3 != "":
+            --trim3 $general.trim3
+        #end if
 
-        --minQ     ${split.min_qual}
-        --fixL     ${split.fixed_len}
-        --ascii    ${split.qual_offset}
+        $general.ignore_quals
+        $general.nofw
+        $general.norc
+        $general.non_deterministic
 
-    ##--Filtering Options----------------------------
+        #if $general.seed != "":
+            --seed $general.seed
+        #end if
+            
+    ##--Classification------------------------------
 
-        --minCov   ${filter.min_cov}
-        --minMLHL  ${filter.min_mlhl}
-        --cCov     ${filter.c_cov}
-        --minLen   ${filter.min_len}
-        --minHits  ${filter.min_hits}
+        --min-hitlen $classification.min_hitlen
+
+        #if $classification.min_totallen != "":
+            --min-totallen $classification.min_totallen
+        #end if
+
+        #if $classification.host_taxids != "":
+            --host-taxids $classification.host_taxids
+        #end if
+
+        #if $classification.exclude_taxids != "":
+            --exclude-taxids $classification.exclude_taxids
+        #end if
+
+    ##--Inputs--------------------------------------
+
+        -x '${inputs.db.fields.path}'
+
+        #for $s in $inputs.unpaired
+            -U '${s.u_reads}'
+        #end for
+
+        #for $s in $inputs.paired
+            -1 '${s.p_reads.forward}'
+            -2 '${s.p_reads.reverse}'
+        #end for
+
+        #if $inputs.sra:
+            --sra-acc $inputs.sra
+        #end if
+
+        #if $outputs.out_fmt == "tab":
+            -S $out_tab
+        #elif $outputs.out_fmt == "sam":
+            -S $out_sam
+        #end if
+
+        --report-file $report
 
     ]]>
     </command>
@@ -53,19 +98,23 @@
 
     <inputs>
 
-    <section name="input" title="Inputs" expanded="True">
+    <section name="inputs" title="Inputs" expanded="True">
 
         <repeat name="unpaired" title="Unpaired reads" min="0" default="0">
-            <param name="up_reads" type="data_collection" collection_type="paired" format="fastq" label="Paired read collection"/>
+            <param name="u_reads" type="data" format="fastq" label="Unpaired reads"/>
         </repeat>
 
         <repeat name="paired" title="Paired reads" min="0" default="0">
             <param name="p_reads" type="data_collection" collection_type="paired" format="fastq" label="Paired read collection"/>
         </repeat>
 
-        <repeat name="sra" title="SRA accessions" min="0" default="0">
-            <param name="sra_reads" type="txt" label="SRA accession"/>
-        </repeat>
+        <param name="sra" type="text" label="SRA accession">
+            <sanitizer invalid_char="">
+                <valid initial="string.letters,string.digits">
+                    <add value="," />
+                </valid>
+            </sanitizer>
+        </param>
 
         <param name="db" type="select" label="Select a reference database">
             <options from_data_table="centrifuge_indices">
@@ -76,16 +125,16 @@
 
     </section>
 
-    <section name="output" title="Outputs" expanded="False">
+    <section name="outputs" title="Outputs" expanded="False">
 
-        <param argument="--out-fmt" type="select" label="Output format"
+        <param argument="--out-fmt" name="out_fmt" type="select" label="Output format">
             <option value="tab" selected="true">tabular</option>
             <option value="sam">SAM</option>
         </param>
 
-        <param argument="--tab-fmt-cols"  type="txt" label="Output columns" value="readID,seqID,taxID,score,2ndBestScore,hitLength,queryLength,numMatches">
-            <sanitizer>
-                <valid initial="string.digits,string.digits">
+        <param argument="--tab-fmt-cols" name="tab_fmt_cols" type="text" label="Output columns" value="readID,seqID,taxID,score,2ndBestScore,hitLength,queryLength,numMatches">
+            <sanitizer invalid_char="">
+                <valid initial="string.letters,string.digits">
                     <add value="," />
                 </valid>
             </sanitizer>
@@ -95,34 +144,35 @@
 
     <section name="general" title="General options" expanded="False">
 
-        <param argument="--skip"  type="integer" value="" label="Initial reads to skip" />
-        <param argument="--upto"  type="integer" value="" label="Stop after reads" />
-        <param argument="--trim5" type="integer" value="" label="Trim 5' bases" />
-        <param argument="--trim3" type="integer" value="" label="Trim 3' bases" />
+        <param argument="--skip"  type="integer" value="" optional="true" label="Initial reads to skip" />
+        <param argument="--upto"  type="integer" value="" optional="true" label="Stop after reads" />
+        <param argument="--trim5" type="integer" value="" optional="true" label="Trim 5' bases" />
+        <param argument="--trim3" type="integer" value="" optional="true" label="Trim 3' bases" />
 
-        <param argument="--ignore-quals" type="boolean" truevalue="--ignore-quals" falsevalue="" checked="no" label="Ignore qualities" />
+        <param argument="--ignore-quals" name="ignore_quals" type="boolean" truevalue="--ignore-quals" falsevalue="" checked="no" label="Ignore qualities" />
 
         <param argument="--nofw" type="boolean" truevalue="--nofw" falsevalue="" checked="no" label="Don't map forward strand" />
         <param argument="--norc" type="boolean" truevalue="--norc" falsevalue="" checked="no" label="Don't map rev-com strand" />
 
-        <param argument="--qc-filter" type="boolean" truevalue="--qc-filter" falsevalue="" checked="no" label="Filter bad reads" />
+        <param argument="--seed" type="integer" value="" min="0" optional="true" label="Starting seed" />
+        <param argument="--non-deterministic" name="non_deterministic" type="boolean" truevalue="--non-deterministic" falsevalue="" checked="no" label="Use non-deterministic seeding" />
 
     </section>
 
     <section name="classification" title="Classification" expanded="True">
 
-        <param argument="--min-hitlen"   type="integer" value="22" min="16" label="Minimum hit length" />
-        <param argument="--min-totallen" type="integer" value="0"  min="0" label="Minimum total length" />
+        <param argument="--min-hitlen" name="min_hitlen" type="integer" value="22" min="16" label="Minimum hit length" />
+        <param argument="--min-totallen" name="min_totallen" type="integer" optional="true"  min="0" label="Minimum summed length" />
 
-        <param argument="--host-taxids"  type="txt" label="Host taxonomic IDs">
-            <sanitizer>
+        <param argument="--host-taxids" name="host_taxids" type="text" label="Host taxonomic IDs">
+            <sanitizer invalid_char="">
                 <valid initial="string.digits">
                     <add value="," />
                 </valid>
             </sanitizer>
         </param>
-        <param argument="--exclude-taxids"  type="txt" label="Exclude taxonomic IDs">
-            <sanitizer>
+        <param argument="--exclude-taxids" name="exclude_taxids" type="text" label="Excluded taxonomic IDs">
+            <sanitizer invalid_char="">
                 <valid initial="string.digits">
                     <add value="," />
                 </valid>
@@ -137,11 +187,11 @@
 
     <outputs>
 
-        <data name="out_tab" format="tabular" label="Centrifuge on ${on_string}: Output" />
-            <filter>(output['out-fmt'] == "tab")</filter>
+        <data name="out_tab" format="tabular" label="Centrifuge on ${on_string}: Output">
+            <filter>(outputs['out_fmt'] == "tab")</filter>
         </data>
-        <data name="out_sam" format="sam" label="Centrifuge on ${on_string}: Output" />
-            <filter>(output['out-fmt'] == "sam")</filter>
+        <data name="out_sam" format="sam" label="Centrifuge on ${on_string}: Output">
+            <filter>(outputs['out_fmt'] == "sam")</filter>
         </data>
         <data name="report" format="txt" label="Centrifuge on ${on_string}: Report" />
 
@@ -150,6 +200,125 @@
     <!-- ***************************************************************** -->
 
     <tests>
+        <!-- default unpaired -->
+        <test>
+            <param name="db" value="test_db" />
+            <param name="u_reads" ftype="fastq" value="input_u.fq" />
+            <output name="out_tab" file="defaults.tsv" />
+            <output name="report" file="defaults.report" />
+        </test>
+        <!-- default paired -->
+        <test>
+            <param name="db" value="test_db" />
+            <param name="p_reads">
+                <collection type="paired">
+                    <element name="forward" value="input_f.fq" />
+                    <element name="reverse" value="input_r.fq" />
+                </collection>
+            </param>
+            <output name="out_tab" file="paired.tsv" />
+            <output name="report" file="paired.report" />
+        </test>
+        <!-- default combined -->
+        <test>
+            <param name="db" value="test_db" />
+            <param name="u_reads" ftype="fastq" value="input_u.fq" />
+            <param name="p_reads">
+                <collection type="paired">
+                    <element name="forward" value="input_f.fq" />
+                    <element name="reverse" value="input_r.fq" />
+                </collection>
+            </param>
+            <output name="out_tab" file="both.tsv" />
+            <output name="report" file="both.report" />
+        </test>
+        <!-- exclude IDs -->
+        <test>
+            <param name="db" value="test_db" />
+            <param name="exclude_taxids"  value="9913" />
+            <param name="u_reads" ftype="fastq" value="input_u.fq" />
+            <output name="out_tab" file="exclude.tsv" />
+            <output name="report" file="exclude.report" />
+        </test>
+        <!-- specify host -->
+        <test>
+            <param name="db" value="test_db" />
+            <param name="host_taxids"  value="9913" />
+            <param name="u_reads" ftype="fastq" value="input_u.fq" />
+            <output name="out_tab" file="host.tsv" />
+            <output name="report" file="host.report" />
+        </test>
+        <!-- minimum length -->
+        <test>
+            <param name="db" value="test_db" />
+            <param name="min_hitlen"  value="83" />
+            <param name="u_reads" ftype="fastq" value="input_u.fq" />
+            <output name="out_tab" file="minlen83.tsv" />
+            <output name="report" file="minlen83.report" />
+        </test>
+        <!-- norc -->
+        <test>
+            <param name="db" value="test_db" />
+            <param name="norc"  value="true" />
+            <param name="u_reads" ftype="fastq" value="input_u.fq" />
+            <output name="out_tab" file="norc.tsv" />
+            <output name="report" file="norc.report" />
+        </test>
+        <!-- nofw -->
+        <test>
+            <param name="db" value="test_db" />
+            <param name="nofw"  value="true" />
+            <param name="u_reads" ftype="fastq" value="input_u.fq" />
+            <output name="out_tab" file="nofw.tsv" />
+            <output name="report" file="nofw.report" />
+        </test>
+        <!-- set seed -->
+        <test>
+            <param name="db" value="test_db" />
+            <param name="seed"  value="123" />
+            <param name="u_reads" ftype="fastq" value="input_u.fq" />
+            <output name="out_tab" file="seed123.tsv" />
+            <output name="report" file="seed123.report" />
+        </test>
+        <!-- 5' trim -->
+        <test>
+            <param name="db" value="test_db" />
+            <param name="trim5"  value="10" />
+            <param name="u_reads" ftype="fastq" value="input_u.fq" />
+            <output name="out_tab" file="trim5_10.tsv" />
+            <output name="report" file="trim5_10.report" />
+        </test>
+        <!-- 3' trim -->
+        <test>
+            <param name="db" value="test_db" />
+            <param name="trim3"  value="5" />
+            <param name="u_reads" ftype="fastq" value="input_u.fq" />
+            <output name="out_tab" file="trim3_5.tsv" />
+            <output name="report" file="trim3_5.report" />
+        </test>
+        <!-- skip start -->
+        <test>
+            <param name="db" value="test_db" />
+            <param name="skip"  value="3" />
+            <param name="u_reads" ftype="fastq" value="input_u.fq" />
+            <output name="out_tab" file="skip3.tsv" />
+            <output name="report" file="skip3.report" />
+        </test>
+        <!-- skip end -->
+        <test>
+            <param name="db" value="test_db" />
+            <param name="upto"  value="6" />
+            <param name="u_reads" ftype="fastq" value="input_u.fq" />
+            <output name="out_tab" file="upto6.tsv" />
+            <output name="report" file="upto6.report" />
+        </test>
+        <!-- invalid parameter value -->
+        <test expect_failure="true">
+            <param name="db" value="test_db" />
+            <param name="tab_fmt_cols"  value="FooBar" />
+            <param name="u_reads" ftype="fastq" value="input_u.fq" />
+        </test>
+
     </tests>
 
     <!-- ***************************************************************** -->
