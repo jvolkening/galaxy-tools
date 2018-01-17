@@ -193,7 +193,7 @@
         <data name="out_sam" format="sam" label="Centrifuge on ${on_string}: Output">
             <filter>(outputs['out_fmt'] == "sam")</filter>
         </data>
-        <data name="report" format="txt" label="Centrifuge on ${on_string}: Report" />
+        <data name="report" format="tabular" label="Centrifuge on ${on_string}: Report" />
 
     </outputs>
 
