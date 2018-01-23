@@ -121,8 +121,19 @@ def parse_meta(fn):
         test_file = files[0]
 
         f = h5py.File(test_file,"r")
-        flowcell = f["/UniqueGlobalKey/context_tags"].attrs["flowcell"].upper()
-        kit = f["/UniqueGlobalKey/context_tags"].attrs["sequencing_kit"].upper()
+        #TODO: clean up attribute checking
+        try:
+            flowcell = f["/UniqueGlobalKey/context_tags"].attrs["flowcell"].upper()
+        except:
+            try:
+                flowcell = f["/UniqueGlobalKey/context_tags"].attrs["flowcell_type"].upper()
+            except:
+                raise ValueError('No attribute found for flowcell type')
+        try:
+            kit = f["/UniqueGlobalKey/context_tags"].attrs["sequencing_kit"].upper()
+        except:
+            raise ValueError('No attribute found for sequencing kit')
+            
     except OSError as e:
         print("Unexpected error:", e.strerror)
         raise
