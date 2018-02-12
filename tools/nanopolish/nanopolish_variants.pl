@@ -7,6 +7,7 @@ use 5.012;
 use Cwd qw/getcwd abs_path/;
 use File::Copy qw/copy/;
 use Getopt::Long qw/:config pass_through/;
+use List::Util qw/min/;
 use threads;
 use threads::shared;
 use BioX::Seq::Stream;
@@ -37,6 +38,14 @@ my $ret;
 my $fn_link = 'reads';
 my $tmp_dir = 'tmp_dir';
 mkdir $tmp_dir;
+
+# divide available threads between actual threads and regions
+#
+# testing suggests minimal speed-up past 4-8 actual threads per region, so use
+# remaining threads for running parallel regions
+my $n_threads = min( 4, $threads );
+my $n_workers = int($threads/$n_threads);
+
 
 $fn_fast5 = abs_path($fn_fast5);
 
@@ -82,8 +91,9 @@ else {
 
 my @cmd = @ARGV;
 unshift @cmd, 'nanopolish';
-push @cmd, '--genome', $fn_genome;
-push @cmd, '--reads', $fn_link;
+push @cmd, '--genome',  $fn_genome;
+push @cmd, '--reads',   $fn_link;
+push @cmd, '--threads', $n_threads;
 
 my @regions :shared;
 
@@ -96,7 +106,7 @@ while (my $seq = $parser->next_seq) {
 }
 
 my @workers;
-for (1..$threads) {
+for (1..$n_workers) {
     push @workers, threads->create(\&run);
 }
 
