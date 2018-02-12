@@ -17,6 +17,7 @@ my $fn_outfile;
 my $fn_consensus;
 my $fn_fast5;
 my $fn_reads;
+my $fn_index;
 
 # remember full command string (with proper binary)
 
@@ -28,10 +29,12 @@ GetOptions(
     'consensus=s' => \$fn_consensus,
     'fast5=s'     => \$fn_fast5,
     'reads=s'     => \$fn_reads,
+    'index=s'     => \$fn_index,
 );
 
 my $ret;
 
+my $fn_link = 'reads';
 my $tmp_dir = 'tmp_dir';
 mkdir $tmp_dir;
 
@@ -45,28 +48,42 @@ my $cwd = abs_path( getcwd() );
 chdir $fast5_dir;
 $ret = system(
     'tar',
-    '-xvf',
+    '-xf',
     $fn_fast5
 );
 die "Failed to extract tarball: $!\n"
     if ($ret);
 chdir $cwd;
 
+symlink( $fn_reads, $fn_link )
+    or die "Failed to create symlink";
+
 
 # index reads
-$ret = system(
-    'nanopolish',
-    'index',
-    '--directory' => $fast5_dir,
-    $fn_reads,
-);
-die "Failed nanopolish indexing: $!\n"
-    if ($ret);
+if (defined $fn_index) {
+    $ret = system(
+        'tar',
+        '-xf',
+        $fn_index
+    );
+    die "Failed to extract tarball: $!\n"
+        if ($ret);
+}
+else {
+    $ret = system(
+        'nanopolish',
+        'index',
+        '--directory' => $fast5_dir,
+        $fn_link,
+    );
+    die "Failed nanopolish indexing: $!\n"
+        if ($ret);
+}
 
 my @cmd = @ARGV;
 unshift @cmd, 'nanopolish';
 push @cmd, '--genome', $fn_genome;
-push @cmd, '--reads', $fn_reads;
+push @cmd, '--reads', $fn_link;
 
 my @regions :shared;
 

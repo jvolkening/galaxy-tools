@@ -1,14 +1,12 @@
-<tool id="nanopolish_extract" name="Nanopolish::extract" version="0.8.2">
+<tool id="nanopolish_index" name="Nanopolish::index" version="0.8.2">
 
-    <description>FAST5 to FASTQ/A extraction</description>
+    <description>Index FASTQ reads in FAST5 file</description>
 
     <!-- ***************************************************************** -->
    
-    <!--
     <requirements>
-        <requirement type="package" version="0.7.2">nanopolish</requirement>
+        <requirement type="package" version="0.8.1">nanopolish</requirement>
     </requirements>
-    -->
 
     <!-- ***************************************************************** -->
 
@@ -19,7 +17,11 @@
     <command detect_errors="aggressive">
     <![CDATA[
 
-    python3 $__tool_directory__/nanopolish_extract.py $input $output \${GALAXY_SLOTS:-1}
+    perl $__tool_directory__/nanopolish_index.pl
+
+        --reads $input_reads
+        --fast5 $input_fast5
+        --out   $out_index
 
     ]]>
     </command>
@@ -28,11 +30,8 @@
 
     <inputs>
 
-        <param name="input" type="data" format="fast5.tar" label="Input reads" />
-        <param name="out_format" type="select" label="Output format">
-            <option value="fastq" selected="true">fastq</option>
-            <option value="fasta">fasta</option>
-        </param>
+        <param name="input_reads" type="data" format="fasta,fastq" label="Input reads (FASTA/Q)" />
+        <param name="input_fast5" type="data" format="fast5.tar" label="Input reads (FAST5)" />
 
     </inputs>
 
@@ -40,11 +39,7 @@
 
     <outputs>
 
-        <data name="output" format="fastqsanger" label="${tool.name} on ${on_string}">
-            <change_format>
-                <when input="out_format" value="fasta" format="fasta" />
-            </change_format>
-        </data>
+        <data name="out_index" format="tar" label="${tool.name} on ${on_string}" />
 
     </outputs>
 
@@ -52,8 +47,9 @@
 
     <tests>
         <test>
-            <param name="input" value="test_data.fast5.tar.gz" ftype="fast5.tar.gz" />
-            <output name="output" file="test_data.fastq" compare="sim_size" delta="0"/>
+            <param name="input_reads" value="called.fa" ftype="fasta" />
+            <param name="input_fast5" value="test.fast5.tar.gz" ftype="fast5.tar.gz" />
+            <output name="out_index" file="index.tar" compare="sim_size" delta="100"/>
         </test>
     </tests>
 
@@ -73,7 +69,7 @@ The Galaxy wrapper has modified nanopolish to take a gzip tarball of FAST5 reads
 as input, such as can be produced by `poretools combine`, and always outputs a
 single FASTQ file.
 
-This is the `extract` module.
+This is the `variants` module.
 
     ]]>
     </help>

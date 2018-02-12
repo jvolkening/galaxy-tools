@@ -5,7 +5,7 @@
     <!-- ***************************************************************** -->
    
     <requirements>
-        <requirement type="package" version="0.8.1">nanopolish</requirement>
+        <requirement type="package" version="0.8.5">nanopolish</requirement>
     </requirements>
 
     <!-- ***************************************************************** -->
@@ -33,6 +33,9 @@
         --min-candidate-depth $min_candidate_depth
         --min-candidate-frequency $min_candidate_frequency
         --fast5 $input_fast5
+    #if $input_index:
+        --index $input_index
+    #end if
         $fix_homopolymers
         $calculate_all_support
 
@@ -43,10 +46,11 @@
 
     <inputs>
 
-        <param name="input_reads" type="data" format="fasta" label="Input reads (FASTA)" />
+        <param name="input_reads" type="data" format="fasta,fastq" label="Input reads (FASTA/Q)" />
         <param name="input_fast5" type="data" format="fast5.tar" label="Input reads (FAST5)" />
         <param name="input_bam"   type="data" format="bam"   label="Alignment" />
         <param name="input_ref"   type="data" format="fasta" label="Reference" />
+        <param name="input_index" type="data" format="tar" label="Precalculated index (optional)" optional="True" />
         <param name="min_candidate_frequency" type="float" value="0.2" size="5" label="Minimum candidate frequency" />
         <param name="min_candidate_depth" type="integer" min="1" value="20" size="5" label="Minimum candidate depth" />
         <param name="max_haplotypes" type="integer" min="0" value="1000" size="5" label="Maximum haplotype combinations" />
@@ -67,13 +71,54 @@
     <!-- ***************************************************************** -->
 
     <tests>
+        <!-- test defaults with FASTA input -->
         <test>
-            <param name="input_reads" value="variants.reads.fa" ftype="fasta" />
-            <param name="input_fast5" value="variants.in.fast5.tar.bz2" ftype="fast5.tar.bz2" />
-            <param name="input_bam"   value="variants.bam" ftype="bam" />
-            <param name="input_ref"   value="variants.ref.fa" ftype="fasta" />
+            <param name="input_reads" value="called.fa" ftype="fasta" />
+            <param name="input_fast5" value="test.fast5.tar.gz" ftype="fast5.tar.gz" />
+            <param name="input_bam"   value="called.bam" ftype="bam" />
+            <param name="input_ref"   value="ref.fa" ftype="fasta" />
+            <param name="fix_homopolymers" value="False"/>
+            <output name="out_consensus" file="consensus.fa" compare="diff" />
+            <output name="out_variants" file="consensus.vcf" compare="diff" />
+            <assert_command>
+                <not_has_text text="--index" />
+                <not_has_text text="--fix-homopolymers" />
+            </assert_command>
+        </test>
+        <!-- test FASTQ input -->
+        <test>
+            <param name="input_reads" value="called.fq" ftype="fastq" />
+            <param name="input_fast5" value="test.fast5.tar.gz" ftype="fast5.tar.gz" />
+            <param name="input_bam"   value="called.bam" ftype="bam" />
+            <param name="input_ref"   value="ref.fa" ftype="fasta" />
+            <param name="fix_homopolymers" value="False"/>
+            <output name="out_consensus" file="consensus.fa" compare="diff" />
+            <output name="out_variants" file="consensus.vcf" compare="diff" />
+        </test>
+        <!-- test homopolymer fixing -->
+        <test>
+            <param name="input_reads" value="called.fa" ftype="fasta" />
+            <param name="input_fast5" value="test.fast5.tar.gz" ftype="fast5.tar.gz" />
+            <param name="input_bam"   value="called.bam" ftype="bam" />
+            <param name="input_ref"   value="ref.fa" ftype="fasta" />
             <param name="fix_homopolymers" value="True"/>
-            <output name="out_consensus" file="variants.out.fa" compare="diff" />
+            <output name="out_consensus" file="consensus.hp.fa" compare="diff" />
+            <output name="out_variants" file="consensus.hp.vcf" compare="diff" />
+        </test>
+        <!-- test pre-calculated index input -->
+        <test>
+            <param name="input_reads" value="called.fa" ftype="fasta" />
+            <param name="input_fast5" value="test.fast5.tar.gz" ftype="fast5.tar.gz" />
+            <param name="input_bam"   value="called.bam" ftype="bam" />
+            <param name="input_ref"   value="ref.fa" ftype="fasta" />
+            <param name="input_index" value="index.tar" ftype="tar" />
+            <param name="fix_homopolymers" value="True"/>
+            <output name="out_consensus" file="consensus.hp.fa" compare="diff" />
+            <output name="out_variants" file="consensus.hp.vcf" compare="diff" />
+            <assert_command>
+                <has_text text="--index" />
+                <has_text text="--fix-homopolymers" />
+            </assert_command>
         </test>
     </tests>
 
