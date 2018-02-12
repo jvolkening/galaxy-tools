@@ -1,4 +1,4 @@
-<tool id="nanopolish_variants" name="Nanopolish::variants" version="0.8.2">
+<tool id="nanopolish_variants" name="Nanopolish::variants" version="0.8.5">
 
     <description>Re-call consensus and variants from raw signal</description>
 

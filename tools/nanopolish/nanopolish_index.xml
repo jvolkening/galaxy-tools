@@ -1,11 +1,11 @@
-<tool id="nanopolish_index" name="Nanopolish::index" version="0.8.2">
+<tool id="nanopolish_index" name="Nanopolish::index" version="0.8.5">
 
     <description>Index FASTQ reads in FAST5 file</description>
 
     <!-- ***************************************************************** -->
    
     <requirements>
-        <requirement type="package" version="0.8.1">nanopolish</requirement>
+        <requirement type="package" version="0.8.5">nanopolish</requirement>
     </requirements>
 
     <!-- ***************************************************************** -->
@@ -69,7 +69,7 @@ The Galaxy wrapper has modified nanopolish to take a gzip tarball of FAST5 reads
 as input, such as can be produced by `poretools combine`, and always outputs a
 single FASTQ file.
 
-This is the `variants` module.
+This is the `index` module.
 
     ]]>
     </help>
