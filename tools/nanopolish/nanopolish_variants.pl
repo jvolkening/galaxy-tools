@@ -118,11 +118,11 @@ my @out_files = glob "$tmp_dir/*.vcf";
 open my $out_cons, '>', $fn_consensus
     or die "Failed to open output consensus: $!";
 for (@fa_files) {
-    open my $in, '<', $_;
-    while (my $line = <$in>) {
-        print {$out_cons} $line;
+    my $parser =  BioX::Seq::Stream->new($_);
+    while (my $seq = $parser->next_seq) {
+        $seq->id =~ s/^.+\K:\d+-\d+$//; # strip coordinates from ID
+        print {$out_cons} $seq->as_fasta;
     }
-    close $in;
 }
 close $out_cons;
 

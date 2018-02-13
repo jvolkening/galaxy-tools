@@ -104,8 +104,12 @@
             <param name="fix_homopolymers" value="True"/>
             <output name="out_consensus" file="consensus.hp.fa" compare="diff" />
             <output name="out_variants" file="consensus.hp.vcf" compare="diff" />
+            <assert_command>
+                <has_text text="--fix-homopolymers" />
+                <not_has_text text="--calculate-all-support" />
+            </assert_command>
         </test>
-        <!-- test pre-calculated index input -->
+        <!-- test pre-calculated index input, fix-homopolymers command -->
         <test>
             <param name="input_reads" value="called.fa" ftype="fasta" />
             <param name="input_fast5" value="test.fast5.tar.gz" ftype="fast5.tar.gz" />
@@ -117,7 +121,19 @@
             <output name="out_variants" file="consensus.hp.vcf" compare="diff" />
             <assert_command>
                 <has_text text="--index" />
-                <has_text text="--fix-homopolymers" />
+            </assert_command>
+        </test>
+        <!-- test calculate-all-support command -->
+        <test>
+            <param name="input_reads" value="called.fa" ftype="fasta" />
+            <param name="input_fast5" value="test.fast5.tar.gz" ftype="fast5.tar.gz" />
+            <param name="input_bam"   value="called.bam" ftype="bam" />
+            <param name="input_ref"   value="ref.fa" ftype="fasta" />
+            <param name="input_index" value="index.tar" ftype="tar" />
+            <param name="calculate_all_support" value="True"/>
+            <assert_command>
+                <not_has_text text="--fix-homopolymers" />
+                <has_text text="--calculate-all-support" />
             </assert_command>
         </test>
     </tests>
