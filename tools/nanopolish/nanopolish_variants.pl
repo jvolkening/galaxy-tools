@@ -98,11 +98,13 @@ push @cmd, '--threads', $n_threads;
 my @regions :shared;
 
 # build region tags to pass to nanopolish
-my $parser = BioX::Seq::Stream->new($fn_genome);
-while (my $seq = $parser->next_seq) {
-    push @regions, join( ':', $seq->id,
-        join( '-', 1, length($seq) ),
-    );
+if (-s $fn_genome) { # gracefully handle empty inputs
+    my $parser = BioX::Seq::Stream->new($fn_genome);
+    while (my $seq = $parser->next_seq) {
+        push @regions, join( ':', $seq->id,
+            join( '-', 1, length($seq) ),
+        );
+    }
 }
 
 my @workers;

@@ -136,6 +136,18 @@
                 <has_text text="--calculate-all-support" />
             </assert_command>
         </test>
+        <!-- test empty input (should return empty output, not throw error) -->
+        <!-- currently empty inputs don't work, so this test is disabled
+        <test>
+            <param name="input_reads" value="called.fa" ftype="fasta" />
+            <param name="input_fast5" value="test.fast5.tar.gz" ftype="fast5.tar.gz" />
+            <param name="input_bam"   value="called.bam" ftype="bam" />
+            <param name="input_ref"   value="ref_empty.fa" ftype="fasta" />
+            <param name="input_index" value="index.tar" ftype="tar" />
+            <output name="out_consensus" file="consensus.empty.fa" compare="diff" />
+            <output name="out_variants" file="consensus.empty.vcf" compare="diff" />
+        </test>
+        -->
     </tests>
 
     <!-- ***************************************************************** -->
