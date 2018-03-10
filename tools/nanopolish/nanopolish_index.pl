@@ -4,8 +4,11 @@ use strict;
 use warnings;
 use 5.012;
 
+use autodie;
+
 use Cwd qw/getcwd abs_path/;
 use File::Copy qw/copy/;
+use File::Temp qw/tempdir/;
 use Getopt::Long qw/:config pass_through/;
 use threads;
 use threads::shared;
@@ -26,9 +29,15 @@ GetOptions(
 
 my $ret;
 
+my $cwd = abs_path( getcwd() );
+
 $fn_fast5   = abs_path($fn_fast5);
 $fn_reads   = abs_path($fn_reads);
 $fn_outfile = abs_path($fn_outfile);
+
+my $tmpdir = tempdir( CLEANUP => 1 );
+
+chdir $tmpdir;
 
 # extract FAST5 files to path where they are expected
 my $fast5_dir = 'fast5';
@@ -37,7 +46,6 @@ if (-e $fast5_dir) {
     exit;
 }
 mkdir $fast5_dir;
-my $cwd = abs_path( getcwd() );
 chdir $fast5_dir;
 
 # use system 'tar' to transparently and safely handle absolute paths
@@ -49,7 +57,7 @@ $ret = system(
 die "Failed to extract tarball: $!\n"
     if ($ret);
 
-chdir $cwd;
+chdir $tmpdir;
 
 symlink( $fn_reads, $fn_link )
     or die "Failed to create symlink: $@";
