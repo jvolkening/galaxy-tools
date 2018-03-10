@@ -8,6 +8,7 @@ import shutil
 import h5py
 import numpy as np
 from distutils.util import strtobool
+from tempfile import mkdtemp
 
 def main():
     tar_file = sys.argv[1]
@@ -16,11 +17,13 @@ def main():
     demux    = strtobool( sys.argv[4] )
     threads  = sys.argv[5]
 
-    (flowcell, kit) = parse_meta(tar_file)
+    tempdir = mkdtemp()
+
+    (flowcell, kit) = parse_meta(tar_file, tempdir)
 
     subprocess.call(
         ["read_fast5_basecaller.py",
-        "--input", "in_dir",
+        "--input", tempdir,
         "--worker_threads", threads,
         "--save_path", "out_dir",
         "--flowcell", flowcell,
@@ -93,14 +96,16 @@ def main():
         else:
             raise ValueError('Bad output format specified')
 
+    try:
+        shutil.rmtree(tempdir)
+    except:
+        print("Unable to remove temp directory:", sys.exc_info()[0])
+        raise
 
-def parse_meta(fn):
+
+def parse_meta(fn, in_dir):
 
     try:
-        in_dir = "in_dir"
-        if not os.path.exists(in_dir):
-            os.makedirs(in_dir)
-
         # python's tarfile interface does not sanitize file paths within
         # tarballs, which can be a big security risk. GNU tar does sanitize by
         # default, so it's easier/safer here just to call the system tar
