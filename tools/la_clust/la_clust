@@ -33,6 +33,7 @@ my $min_size       = 6;
 my $rank_mode      = 'edges';
 my $sync_rank_mode = 'none';
 my $randomize      = 0;
+my $threads        = 1;
 
 # global variables
 my $ret; #can re-use
@@ -65,6 +66,7 @@ GetOptions(
     'rank_mode=s'      => \$rank_mode,
     'sync_rank_mode=s' => \$sync_rank_mode,
     'randomize'        => \$randomize,
+    'threads=i'        => \$threads,
     'version'          => sub{ say $VERSION; exit; },
 );
 
@@ -93,6 +95,9 @@ die "$sync_rank_mode not a valid sync rank mode\n"
 
 die "max_sync_size must be equal to or larger than max_size\n"
     if ($max_sync_size < $max_size);
+
+# threads must be power of two
+$threads = 2**int(log($threads)/log(2));
 
 # rename input sequences to PacBio-like format (for DALIGNER input)
 my $tmp_fa   = File::Temp->new(SUFFIX=>'.fasta');
@@ -139,6 +144,7 @@ die "fasta2DB failed: $!\n" if ($ret);
 $ret = system(
     $DALIGNER,
     "-l$min_len",
+    "-T$threads",
     "$db_name.db",
     "$db_name.db",
 );

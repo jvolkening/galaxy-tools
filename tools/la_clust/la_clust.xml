@@ -44,6 +44,8 @@
         --rank_mode     $rank_mode
         $randomize
 
+        --threads  \${GALAXY_SLOTS:-1}
+
     > $result_table
 
     ]]>
