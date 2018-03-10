@@ -4,13 +4,16 @@ use strict;
 use warnings;
 use 5.012;
 
+use autodie;
+
+use BioX::Seq::Stream;
 use Cwd qw/getcwd abs_path/;
 use File::Copy qw/copy/;
+use File::Temp qw/tempdir/;
 use Getopt::Long qw/:config pass_through/;
 use List::Util qw/min/;
 use threads;
 use threads::shared;
-use BioX::Seq::Stream;
 
 my $fn_genome;
 my $threads = 1;
@@ -19,6 +22,7 @@ my $fn_consensus;
 my $fn_fast5;
 my $fn_reads;
 my $fn_index;
+my $fn_bam;
 
 # remember full command string (with proper binary)
 
@@ -31,13 +35,36 @@ GetOptions(
     'fast5=s'     => \$fn_fast5,
     'reads=s'     => \$fn_reads,
     'index=s'     => \$fn_index,
+    'bam=s'       => \$fn_bam,
 );
 
 my $ret;
 
+my $cwd = abs_path( getcwd() );
+
+$fn_genome    = abs_path( $fn_genome    ) if ( defined $fn_genome    );
+$fn_outfile   = abs_path( $fn_outfile   ) if ( defined $fn_outfile   );
+$fn_consensus = abs_path( $fn_consensus ) if ( defined $fn_consensus );
+$fn_fast5     = abs_path( $fn_fast5     ) if ( defined $fn_fast5     );
+$fn_reads     = abs_path( $fn_reads     ) if ( defined $fn_reads     );
+$fn_index     = abs_path( $fn_index     ) if ( defined $fn_index     );
+
+# BAM filename is already symbolic link, so abs_path() won't work properly.
+# What we actually want are new symbolic links to the same targets
+my $fn_bai = $fn_bam;
+$fn_bai =~ s/\.bam$/.bai/
+    or die "Failed to replace extension of BAM index file";
+my $bam_tgt = readlink $fn_bam;
+my $bai_tgt = readlink $fn_bai;
+
+my $tmpdir = tempdir( CLEANUP => 1 );
+
+chdir $tmpdir;
+mkdir 'tmp';
+symlink $bam_tgt, 'input.bam';
+symlink $bai_tgt, 'input.bai';
+
 my $fn_link = 'reads';
-my $tmp_dir = 'tmp_dir';
-mkdir $tmp_dir;
 
 # divide available threads between actual threads and regions
 #
@@ -47,13 +74,10 @@ my $n_threads = min( 4, $threads );
 my $n_workers = int($threads/$n_threads);
 
 
-$fn_fast5 = abs_path($fn_fast5);
-
 # extract FAST5 files to path where they are expected
 # use system 'tar' to transparently and safely handle absolute paths
 my $fast5_dir = 'fast5';
 mkdir $fast5_dir;
-my $cwd = abs_path( getcwd() );
 chdir $fast5_dir;
 $ret = system(
     'tar',
@@ -62,7 +86,7 @@ $ret = system(
 );
 die "Failed to extract tarball: $!\n"
     if ($ret);
-chdir $cwd;
+chdir $tmpdir;
 
 symlink( $fn_reads, $fn_link )
     or die "Failed to create symlink";
@@ -94,6 +118,7 @@ unshift @cmd, 'nanopolish';
 push @cmd, '--genome',  $fn_genome;
 push @cmd, '--reads',   $fn_link;
 push @cmd, '--threads', $n_threads;
+push @cmd, '--bam',     'input.bam';
 
 my @regions :shared;
 
@@ -114,8 +139,8 @@ for (1..$n_workers) {
 
 $_->join() for (@workers);
 
-my @fa_files  = glob "$tmp_dir/*.fasta";
-my @out_files = glob "$tmp_dir/*.vcf";
+my @fa_files  = glob "tmp/*.fasta";
+my @out_files = glob "tmp/*.vcf";
 
 open my $out_cons, '>', $fn_consensus
     or die "Failed to open output consensus: $!";
@@ -156,8 +181,8 @@ sub run {
             $tag = shift @regions;
         }
 
-        my $fn_out  = "$tmp_dir/$tag.vcf";
-        my $fn_cons = "$tmp_dir/$tag.fasta";
+        my $fn_out  = "tmp/$tag.vcf";
+        my $fn_cons = "tmp/$tag.fasta";
 
         my @cmd_local = @cmd;
         push @cmd_local, '--window', $tag;
