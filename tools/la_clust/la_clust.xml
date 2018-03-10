@@ -21,7 +21,7 @@
     <![CDATA[
 
     #if str($sync_options.sync) == "yes":
-        ln -s $sync_in sync.fa && 
+        ln -s ${sync_options.sync_in} sync.fa && 
     #end if
 
     perl $__tool_directory__/la_clust
@@ -32,13 +32,17 @@
         #if str($sync_options.sync) == "yes":
             --sync_in sync.fa
             --sync_out sync_out
+            --max_sync_size ${sync_options.max_sync_size}
+            --sync_rank_mode ${sync_options.sync_rank_mode}
         #end if
 
-        --min_len  $min_len
-        --min_cov  $min_cov
-        --min_size $min_size
-        --max_size $max_size
-        --max_diff $max_diff
+        --min_len       $min_len
+        --min_cov       $min_cov
+        --min_size      $min_size
+        --max_size      $max_size
+        --max_diff      $max_diff
+        --rank_mode     $rank_mode
+        $randomize
 
     > $result_table
 
@@ -50,21 +54,36 @@
     <inputs>
 
         <param name="in" type="data" format="fastq,fasta" label="Input reads" />
+
         <param argument="--min_cov"  type="float" min="0" max="1" value="0.90" size="5" label="Minimum alignment coverage required (as fraction of read lengths)" />
         <param argument="--max_diff" type="float" min="0" max="1" value="0.35" size="5" label="Maximum alignment difference allowed (as fraction of read lengths)" />
         <param argument="--min_size" type="integer" min="0" value="6"   size="5" label="Minimum number of reads needed to save cluster" />
         <param argument="--max_size" type="integer" min="0" value="60"  size="5" label="Maximum number of reads per cluster to save" />
         <param argument="--min_len"  type="integer" min="0" value="500" size="5" label="Minimum read length to use" />
 
-        <conditional name="sync_options">
-        <param name="sync" type="select" label="Synchronize secondary file" help="">
-            <option value="no" selected="true">no</option>
-            <option value="yes">yes</option>
+        <param name="rank_mode" type="select" label="Rank mode" help="How to rank reads when subsampling">
+            <option value="edges" selected="true">Number of alignments to other reads</option>
+            <option value="length">Distance from median read length</option>
+            <option value="none">None (fully random subsampling)</option>
         </param>
-        <when value="no" />
-        <when value="yes">
-            <param name="sync_in" type="data" format="fastq,fasta" label="Synchronized reads" />
-        </when>
+
+        <param argument="--randomize" type="boolean" truevalue="--randomize" falsevalue="" checked="true" label="Randomize input read order" />
+
+        <conditional name="sync_options">
+            <param name="sync" type="select" label="Synchronize secondary file" help="">
+                <option value="no" selected="true">no</option>
+                <option value="yes">yes</option>
+            </param>
+            <when value="no" />
+            <when value="yes">
+                <param name="sync_in" type="data" format="fastq,fasta" label="Synchronized reads" />
+                <param argument="--max_sync_size" type="integer" min="0" value="200" size="5" label="Maximum number of sync reads per cluster to save" />
+                <param name="sync_rank_mode" type="select" label="Sync rank mode" help="How to rank sync reads when subsampling">
+                    <option value="edges" >Number of alignments to other reads</option>
+                    <option value="length">Distance from median read length</option>
+                    <option value="none" selected="true">None (fully random subsampling)</option>
+                </param>
+            </when>
         </conditional>
 
     </inputs>
@@ -88,7 +107,68 @@
     <!-- ***************************************************************** -->
 
     <tests>
-        <!-- TODO -->
+        <test>
+            <param name="in" value="input.fa" ftype="fasta" />
+            <param name="randomize" value="False" />
+            <param name="sync" value="yes" />
+            <param name="max_size" value="50" />
+            <param name="max_sync_size" value="150" />
+            <param name="min_len" value="500" />
+            <param name="rank_mode" value="length" />
+            <output_collection name="output_collection_fasta" type="list" count="1">
+                <element name="cluster_0" file="50_150_length_none/cluster_0.fasta" compare="diff" />
+            </output_collection>
+            <output_collection name="output_collection_sync" type="list" count="1">
+                <element name="cluster_0" file="50_150_length_none.sync/cluster_0.fasta" compare="diff" />
+            </output_collection>
+        </test>
+        <test>
+            <param name="in" value="input.fa" ftype="fasta" />
+            <param name="randomize" value="False" />
+            <param name="sync" value="yes" />
+            <param name="max_size" value="50" />
+            <param name="max_sync_size" value="150" />
+            <param name="min_len" value="500" />
+            <param name="rank_mode" value="length" />
+            <param name="sync_rank_mode" value="length" />
+            <output_collection name="output_collection_fasta" type="list" count="1">
+                <element name="cluster_0" file="50_150_length_length/cluster_0.fasta" compare="diff" />
+            </output_collection>
+            <output_collection name="output_collection_sync" type="list" count="1">
+                <element name="cluster_0" file="50_150_length_length.sync/cluster_0.fasta" compare="diff" />
+            </output_collection>
+        </test>
+        <test>
+            <param name="in" value="input.fa" ftype="fasta" />
+            <param name="randomize" value="False" />
+            <param name="sync" value="yes" />
+            <param name="max_size" value="70" />
+            <param name="max_sync_size" value="9999" />
+            <param name="min_len" value="500" />
+            <param name="rank_mode" value="edges" />
+            <param name="sync_rank_mode" value="edges" />
+            <output_collection name="output_collection_fasta" type="list" count="1">
+                <element name="cluster_0" file="70_9999_edges_edges/cluster_0.fasta" compare="diff" />
+            </output_collection>
+            <output_collection name="output_collection_sync" type="list" count="1">
+                <element name="cluster_0" file="70_9999_edges_edges.sync/cluster_0.fasta" compare="diff" />
+            </output_collection>
+        </test>
+        <test>
+            <param name="in" value="input.fa" ftype="fasta" />
+            <param name="randomize" value="False" />
+            <param name="sync" value="yes" />
+            <param name="max_size" value="70" />
+            <param name="max_sync_size" value="9999" />
+            <param name="min_len" value="500" />
+            <param name="rank_mode" value="edges" />
+            <output_collection name="output_collection_fasta" type="list" count="1">
+                <element name="cluster_0" file="70_9999_edges_none/cluster_0.fasta" compare="diff" />
+            </output_collection>
+            <output_collection name="output_collection_sync" type="list" count="1">
+                <element name="cluster_0" file="70_9999_edges_none.sync/cluster_0.fasta" compare="diff" />
+            </output_collection>
+        </test>
     </tests>
 
     <!-- ***************************************************************** -->

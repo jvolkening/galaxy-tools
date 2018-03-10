@@ -12,7 +12,7 @@ use Getopt::Long;
 use File::Which qw/which/;
 use File::Temp qw/tempfile/;
 use File::Basename qw/basename/;
-use List::Util qw/min max sum shuffle/;
+use List::Util qw/min max sum shuffle any/;
 
 our $VERSION = 0.001;
 
@@ -24,14 +24,24 @@ my $dir_out;
 my $sync_out;
 my $fn_sif;
 # parameters
-my $min_cov   = 0.90;
-my $max_diff  = 0.35;
-my $max_size  = 60;
-my $min_len   = 750;
-my $min_size  = 6;
+my $min_cov        = 0.90;
+my $max_diff       = 0.35;
+my $max_size       = 60;
+my $max_sync_size  = 200;
+my $min_len        = 100;
+my $min_size       = 6;
+my $rank_mode      = 'edges';
+my $sync_rank_mode = 'none';
+my $randomize      = 0;
 
 # global variables
 my $ret; #can re-use
+
+my @rank_modes = qw/
+    edges
+    length
+    none
+/;
 
 # Use a temporary filename here as a semaphore, even though the actual file is
 # not used. This prevents problems with hard-coded temp filenames clashing
@@ -41,17 +51,21 @@ $db_name = basename($db_name);
 
 
 GetOptions(
-    'in=s'          => \$fn_in,
-    'sync_in=s'     => \$sync_in,
-    'out=s'         => \$dir_out,
-    'sync_out=s'    => \$sync_out,
-    'sif=s'         => \$fn_sif,
-    'min_cov=f'     => \$min_cov,
-    'max_diff=f'    => \$max_diff,
-    'min_len=i'     => \$min_len,
-    'min_size=i'    => \$min_size,
-    'max_size=i'    => \$max_size,
-    'version'       => sub{ say $VERSION; exit; },
+    'in=s'             => \$fn_in,
+    'sync_in=s'        => \$sync_in,
+    'out=s'            => \$dir_out,
+    'sync_out=s'       => \$sync_out,
+    'sif=s'            => \$fn_sif,
+    'min_cov=f'        => \$min_cov,
+    'max_diff=f'       => \$max_diff,
+    'min_len=i'        => \$min_len,
+    'min_size=i'       => \$min_size,
+    'max_size=i'       => \$max_size,
+    'max_sync_size=i'  => \$max_sync_size,
+    'rank_mode=s'      => \$rank_mode,
+    'sync_rank_mode=s' => \$sync_rank_mode,
+    'randomize'        => \$randomize,
+    'version'          => sub{ say $VERSION; exit; },
 );
 
 my $DALIGNER = which('daligner')
@@ -72,10 +86,18 @@ die "Output directory exists and is not a directory\n"
     if (-e $sync_out && ! -d $sync_out);
 mkdir $sync_out if (! -e $sync_out);
 
+die "$rank_mode not a valid rank mode\n"
+    if (! any {$_ eq $rank_mode} @rank_modes);
+die "$sync_rank_mode not a valid sync rank mode\n"
+    if (! any {$_ eq $sync_rank_mode} @rank_modes);
+
+die "max_sync_size must be equal to or larger than max_size\n"
+    if ($max_sync_size < $max_size);
 
 # rename input sequences to PacBio-like format (for DALIGNER input)
 my $tmp_fa   = File::Temp->new(SUFFIX=>'.fasta');
 
+my @seq_lens;
 my $prefix;
 my $i = 0;
 
@@ -98,6 +120,7 @@ while (my $seq = $p->next_seq) {
     
     $seq->id = $new_id;
     print {$tmp_fa} $seq->as_fasta;
+    push @seq_lens, length $seq;
 
 }
 close $tmp_fa;
@@ -219,13 +242,25 @@ if (defined $fn_sif) {
 
 my %counts;
 my %link_cutoffs;
+my %delta_cutoffs;
+my %sync_link_cutoffs;
+my %sync_delta_cutoffs;
 my %written;
+my %sync_written;
 my %fhs;
 my %fhs_sync;
-my %lens;
+my %all_lens;
+my %used_lens;
+my %medians;
 
-for my $key (shuffle keys %assignments) {
-#for my $key (sort {$a <=> $b} keys %assignments) {
+# randomize input order if asked
+my @keys = $randomize
+    ? shuffle keys %assignments
+    : sort {$a <=> $b} keys %assignments;
+
+# $key is the 0-based read index
+for my $key (@keys) {
+
     my $clust = $assignments{$key};
 
     # generate missing cluster counts
@@ -240,13 +275,30 @@ for my $key (shuffle keys %assignments) {
 
     # generate missing linkage cutoffs:
     # when subsampling, nodes with higher numbers of links to other cluster
-    # nodes are given priority
+    # nodes can be given priority
     if (! defined $link_cutoffs{$clust}) {
         my @links   = map {scalar keys %{ $graph->{$_} } } @members;
         @links = sort {$b <=> $a} @links;
 
         my $n = $counts{$clust} > $max_size ? $max_size : $counts{$clust};
         $link_cutoffs{$clust} = $links[$n-1];
+        $n = $counts{$clust} > $max_sync_size ? $max_sync_size : $counts{$clust};
+        $sync_link_cutoffs{$clust} = $links[$n-1];
+    }
+
+    # generate missing delta cutoffs:
+    # when subsampling, nodes with length closer to the cluster median
+    # can be given priority
+    if (! defined $delta_cutoffs{$clust}) {
+        my @lens = sort {$a <=> $b} map {$seq_lens[$_]} @members;
+        my $median = median(@lens);
+        $medians{$clust} = $median;
+        my @deltas = sort {$a <=> $b} map {abs($_-$median)} @lens;
+
+        my $n = $counts{$clust} > $max_size ? $max_size : $counts{$clust};
+        $delta_cutoffs{$clust} = $deltas[$n-1];
+        $n = $counts{$clust} > $max_sync_size ? $max_sync_size : $counts{$clust};
+        $sync_delta_cutoffs{$clust} = $deltas[$n-1];
     }
 
     if (! defined $fhs{$clust}) {
@@ -269,22 +321,49 @@ for my $key (shuffle keys %assignments) {
             
     }
 
-    if (defined $p_sync) {
+    push @{ $all_lens{$clust} }, $seq_lens[$key];
+
+    # All of these filters are applied BEFORE sync files are written
+    my $write_sync = 1;
+    if ($sync_rank_mode eq 'edges') {
+        # skip if linkage count < cutoff
+        my $n_links = scalar keys %{ $graph->{$key} };
+        $write_sync = 0
+            if ($n_links < $sync_link_cutoffs{$clust});
+    }
+    elsif ($sync_rank_mode eq 'length') {
+        # skip if linkage count < cutoff
+        my $delta = abs($seq_lens[$key] - $medians{$clust});
+        $write_sync = 0
+            if ($delta > $sync_delta_cutoffs{$clust});
+    }
+    # skip if sync max size already reached.
+    $write_sync = 0
+        if (defined $sync_written{$clust}
+            && $sync_written{$clust} >= $max_sync_size);
+
+    if (defined $p_sync && $write_sync) {
 
         my $fh = $fhs_sync{$clust};
         my $id = $seq_ids[$key];
         my $seq = $p_sync->fetch_seq($id)
             // die "Failed to fetch sequence $id: $@\n";
         print {$fh} $seq->as_fasta;
+        ++$sync_written{$clust};
 
     }
 
-    # All of these filters are applied AFTER sync files are written, since
-    # sync files should not be filtered to a target level
-
-    # skip if linkage count < cutoff
-    my $n_links = scalar keys %{ $graph->{$key} };
-    next if ($n_links < $link_cutoffs{$clust});
+    # All of these filters are applied AFTER sync files are written
+    if ($rank_mode eq 'edges') {
+        # skip if linkage count < cutoff
+        my $n_links = scalar keys %{ $graph->{$key} };
+        next if ($n_links < $link_cutoffs{$clust});
+    }
+    elsif ($rank_mode eq 'length') {
+        # skip if linkage count < cutoff
+        my $delta = abs($seq_lens[$key] - $medians{$clust});
+        next if ($delta > $delta_cutoffs{$clust});
+    }
 
     # skip if cluster max size already reached.
     next if (defined $written{$clust} && $written{$clust} >= $max_size);
@@ -293,7 +372,7 @@ for my $key (shuffle keys %assignments) {
     my $id = $seq_ids[$key];
     my $seq = $p->fetch_seq($id)
         // die "Failed to fetch sequence $id: $@\n";
-    push @{ $lens{$clust} }, length($seq);
+    push @{ $used_lens{$clust} }, $seq_lens[$key];
     print {$fh} $seq->as_fasta;
     ++$written{$clust};
     
@@ -308,21 +387,25 @@ say join "\t", qw/
     mean_length
     min_length
     max_length
+    mean_used_length
+    min_used_length
+    max_used_length
 /;
 
 for my $node (sort {$counts{$b} <=> $counts{$a}} keys %counts) {
-    my ($sum, $min, $max) = $counts{$node} >= $min_size
-        ? ( int(sum(@{$lens{$node}})/scalar(@{$lens{$node}})),
-            min(@{$lens{$node}}),
-            max(@{$lens{$node}}),
+    my @stats = $counts{$node} >= $min_size
+        ? ( sprintf("%0.1f",sum(@{$all_lens{$node}})/scalar(@{$all_lens{$node}})),
+            min(@{$all_lens{$node}}),
+            max(@{$all_lens{$node}}),
+            sprintf("%0.1f",sum(@{$used_lens{$node}})/scalar(@{$used_lens{$node}})),
+            min(@{$used_lens{$node}}),
+            max(@{$used_lens{$node}}),
           )
-        : qw/NA NA NA/;
+        : qw/NA NA NA NA NA NA/;
     say join "\t",
         sprintf("cluster_%0*u", length($node_id), $node),
         $counts{$node},
-        $sum,
-        $min,
-        $max,
+        @stats,
     ;
 }
 
@@ -379,5 +462,14 @@ sub process_alignment {
     $graph->{$n1}->{$n2} = 1;
 
     return;
+
+}
+
+sub median {
+
+    my $n = scalar @_;
+    return ($n%2 == 1)
+        ? $_[$n/2]
+        : sum( @_[ ($n/2-1)..($n/2) ] )/2;
 
 }
