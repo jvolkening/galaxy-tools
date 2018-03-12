@@ -143,6 +143,9 @@ load_summary <- function(filepath, min.q){
         d$num_events_template = as.numeric(as.character(d$num_events_template))
         d$start_time = as.numeric(as.character(d$start_time))
     }
+
+    # ignore 0-length reads
+    d <- d[d$sequence_length_template > 0,]
         
     d$events_per_base = d$num_events_template/d$sequence_length_template
 
@@ -334,6 +337,7 @@ single.flowcell <- function(input.file, output.dir, q=8){
     # make plots
     flog.info(paste(sep = "", flowcell, ": plotting length histogram"))
     len.lims <- quantile(d$sequence_length_template,c(0.01,0.99))
+    len.lims[1] <- max(1,len.lims[1])
     
     p1 = ggplot(d, aes(x = sequence_length_template)) + 
         geom_histogram(bins = 200, fill="steelblue") + 

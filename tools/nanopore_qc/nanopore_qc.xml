@@ -71,6 +71,12 @@
     </tests>
     <help>
 <![CDATA[
+
+    `NanoporeQC` produces a summary report on nanopore read data called by
+    Albacore. It acts on the summary table produced by Albacore and produces
+    HTML output. It was originally forked from the MinionQC code by Robert
+    Lanfear.
+
 ]]>
     </help>
     <citations>
