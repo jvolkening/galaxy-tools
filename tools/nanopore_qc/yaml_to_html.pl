@@ -5,12 +5,13 @@ use warnings;
 use 5.012;
 
 use YAML::XS qw/LoadFile/;
+use MIME::Base64;
 use autodie;
 
-my ($fn_in, $fn_out) = @ARGV;
+my ($fn_yaml, $dir_in, $fn_out) = @ARGV;
 
 die "Can't find or read input file: $!\n"
-    if (! -r $fn_in);
+    if (! -r $fn_yaml);
 
 # set output filehandle based on arguments
 my $fh = \*STDOUT;
@@ -18,9 +19,9 @@ if (defined $fn_out) {
     open $fh, '>', $fn_out;
 }
 
-my $yaml = LoadFile($ARGV[0]);
+my $yaml = LoadFile($fn_yaml);
 
-convert($yaml);
+convert($yaml, $dir_in);
 
 sub convert {
 
@@ -99,16 +100,26 @@ CONTENT
 
 
     say {$fh} "    <h3>QC plots</h3>";
-    say {$fh} "    <p>(Click on plot for hi-resolution version)</p>";
+    say {$fh} "    <p>(Click on plot for high-resolution version, or in Chrome \"Open link in new tab\")</p>";
 
     for my $base (@order) {
 
         my $caption = $figs{$base} // die "No caption found for $base";
+     
+        # Base64-encode images
+        my $fn_img_full   = "$dir_in/$base.png";
+        my $fn_img_screen = "$dir_in/$base.screen.png";
+        die "Failed to find or read $fn_img_full"
+            if (! -r $fn_img_full);
+        die "Failed to find or read $fn_img_screen"
+            if (! -r $fn_img_screen);
+        my $img_full   = encode($fn_img_full);
+        my $img_screen = encode($fn_img_screen);
 
         print {$fh} <<"CONTENT"
-    <a href="$base.png">
+    <a href="data:image/png;base64,$img_full">
         <figure>
-            <img src="$base.screen.png" alt="$base" />
+            <img src="data:image/png;base64,$img_screen" alt="$base" />
             <figcaption>$caption</figcaption>
         </figure>
     </a>
@@ -120,7 +131,14 @@ CONTENT
 
 }
 
+sub encode {
 
+    my ($fn) = @_;
+    open my $in, '<:raw', $fn;
+    local($/) = undef;
+    return encode_base64(<$in>);
+
+}
 
 sub header {
 

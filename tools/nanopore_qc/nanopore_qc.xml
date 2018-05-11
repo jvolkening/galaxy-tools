@@ -3,18 +3,18 @@
     <description>Quality report for nanopore data</description>
 
     <requirements>
-        <requirement type="package" version=">=3.3.1">r-base</requirement>
-        <requirement type="package" version=">=2.2.1">r-ggplot2</requirement>
-        <requirement type="package" version=">=1.8.4">r-plyr</requirement>
-        <requirement type="package" version=">=1.4.2">r-reshape2</requirement>
-        <requirement type="package" version=">=0.2.2">r-readr</requirement>
-        <requirement type="package" version=">=2.1.14">r-yaml</requirement>
-        <requirement type="package" version=">=0.4.1">r-scales</requirement>
-        <requirement type="package" version=">=1.4.1">r-futile.logger</requirement>
-        <requirement type="package" version=">=1.10.4">r-data.table</requirement>
-        <requirement type="package" version=">=1.3.2">r-optparse</requirement>
-        <requirement type="package" version=">=1.8">r-mgcv</requirement>
-        <requirement type="package" version=">=0.66">perl-yaml-libyaml</requirement>
+        <requirement type="package" version="3.3.1">r-base</requirement>
+        <requirement type="package" version="2.2.1">r-ggplot2</requirement>
+        <requirement type="package" version="1.8.4">r-plyr</requirement>
+        <requirement type="package" version="1.4.2">r-reshape2</requirement>
+        <requirement type="package" version="0.2.2">r-readr</requirement>
+        <requirement type="package" version="2.1.14">r-yaml</requirement>
+        <requirement type="package" version="0.4.1">r-scales</requirement>
+        <requirement type="package" version="1.4.1">r-futile.logger</requirement>
+        <requirement type="package" version="1.10.4">r-data.table</requirement>
+        <requirement type="package" version="1.3.2">r-optparse</requirement>
+        <requirement type="package" version="1.8">r-mgcv</requirement>
+        <requirement type="package" version="0.66">perl-yaml-libyaml</requirement>
     </requirements>
 
     <stdio>
@@ -45,6 +45,7 @@
         perl '${__tool_directory__}/yaml_to_html.pl'
 
             '${html_file.files_path}/summary.yaml'
+            '${html_file.files_path}'
             '$html_file'
 
     ]]>

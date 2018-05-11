@@ -123,6 +123,7 @@ load_summary <- function(filepath, min.q){
     # by default the lowest value is -Inf, i.e. includes all reads. The 
     # other value in min.q is set by the user at the command line
     d = read_tsv(filepath, col_types = cols_only(channel = 'i', 
+                                                passes_filtering = 'c',
                                                 num_events_template = 'i', 
                                                 sequence_length_template = 'i', 
                                                 mean_qscore_template = 'n',
@@ -146,6 +147,8 @@ load_summary <- function(filepath, min.q){
 
     # ignore 0-length reads
     d <- d[d$sequence_length_template > 0,]
+    # ignore reads failing filtering
+    d <- d[d$passes_filtering == 'True',]
         
     d$events_per_base = d$num_events_template/d$sequence_length_template
 
@@ -173,7 +176,6 @@ load_summary <- function(filepath, min.q){
     d = d[keep]
 
     d$start_bin = cut(d$start_time, 9,labels=c(1:9))
-    write.table(d,"foo.tsv",sep="\t",quote=F)
         
     return(d)
 }
