@@ -11,11 +11,12 @@ from distutils.util import strtobool
 from tempfile import mkdtemp
 
 def main():
-    tar_file = sys.argv[1]
-    out_file = sys.argv[2]
-    out_fmt  = sys.argv[3]
-    demux    = strtobool( sys.argv[4] )
-    threads  = sys.argv[5]
+    tar_file     = sys.argv[1]
+    out_file     = sys.argv[2]
+    out_fmt      = sys.argv[3]
+    demux        = strtobool( sys.argv[4] )
+    disable_filt = strtobool( sys.argv[5] )
+    threads      = sys.argv[6]
 
     tempdir = mkdtemp()
 
@@ -32,7 +33,8 @@ def main():
         "--files_per_batch_folder", "0",
         "--output_format", out_fmt,
         "--reads_per_fastq_batch", "999999999" ] +
-        ["--barcoding"] * demux )
+        ["--barcoding"] * demux +
+        ["--disable_filtering"] * disable_filt )
 
     out_path = "out_dir/workspace"
     pass_path = os.path.join( out_path, "pass" )
