@@ -56,11 +56,20 @@ parser <- add_option(parser,
                      help="The cutoff value for the mean Q score of a read (default 7). Used to create separate plots for reads above and below this threshold"
                      )
 
+parser <- add_option(parser, 
+                     opt_str = c("-d", "--discard_failed"), 
+                     type="logical", 
+                     default=FALSE,
+                     dest = 'filt.failed',
+                     help="Discard reads that failed Albacore filtering"
+                     )
+
 opt = parse_args(parser)
 
-input.file = opt$input.file
-output.dir = opt$output.dir
-q = opt$q
+input.file  = opt$input.file
+output.dir  = opt$output.dir
+filt.failed = opt$filt.failed
+q           = opt$q
 
 # this is how we label the reads at least as good as q
 q_title = paste("Q>=", q, sep="")
@@ -148,7 +157,9 @@ load_summary <- function(filepath, min.q){
     # ignore 0-length reads
     d <- d[d$sequence_length_template > 0,]
     # ignore reads failing filtering
-    d <- d[d$passes_filtering == 'True',]
+    if (filt.failed) {
+        d <- d[d$passes_filtering == 'True',]
+    }
         
     d$events_per_base = d$num_events_template/d$sequence_length_template
 

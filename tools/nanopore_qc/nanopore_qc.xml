@@ -1,4 +1,4 @@
-<tool id="nanopore_qc" name="NanoporeQC" version="0.001">
+<tool id="nanopore_qc" name="NanoporeQC" version="0.002">
 
     <description>Quality report for nanopore data</description>
 
@@ -39,6 +39,7 @@
             -i '$input'
             -o '${html_file.files_path}'
             -q '$q_cutoff'
+            $discard_failed
 
         &&
 
@@ -54,21 +55,52 @@
     <inputs>
         <param name="input" type="data" format="tabular" label="Basecall summary file from Albacore"/>
         <param name="q_cutoff" type="float" value="10" min="0" label="Quality cutoff for QC calculations" />
+        <param name="discard_failed" type="boolean" checked="false" truevalue="--discard_failed T" falsevalue="" label="Ignore reads failing quality filter" />
     </inputs>
     <outputs>
         <data format="html" name="html_file" label="NanoporeQC on ${on_string}" />
     </outputs>
     <tests>
+        <!-- binary image blobs can differ, which is why we use line matching
+        instead of file matching -->
+
+        <!-- quality cutoff 10 -->
         <test>
             <param name="input" value="sequencing_summary.txt.small" ftype="tabular" />
             <param name="q_cutoff" value="10" />
-            <output name="html_file" file="output.html.small.q10" compare="diff" />
+            <output name="html_file">
+                <assert_contents>
+                    <has_text_matching expression="&lt;td&gt;Total Reads&lt;/td&gt;\s*&lt;td&gt;9990&lt;/td&gt;" />
+                    <has_text_matching expression="&lt;td&gt;Total Reads&lt;/td&gt;\s*&lt;td&gt;7952&lt;/td&gt;" />
+                </assert_contents>
+            </output>
         </test>
+
+        <!-- quality cutoff 6 -->
         <test>
             <param name="input" value="sequencing_summary.txt.small" ftype="tabular" />
             <param name="q_cutoff" value="6" />
-            <output name="html_file" file="output.html.small.q6" compare="diff" />
+            <output name="html_file">
+                <assert_contents>
+                    <has_text_matching expression="&lt;td&gt;Total Reads&lt;/td&gt;\s*&lt;td&gt;9990&lt;/td&gt;" />
+                    <has_text_matching expression="&lt;td&gt;Total Reads&lt;/td&gt;\s*&lt;td&gt;9254&lt;/td&gt;" />
+                </assert_contents>
+            </output>
         </test>
+
+        <!-- quality cutoff 6, discard filtered -->
+        <test>
+            <param name="input" value="sequencing_summary.txt.small" ftype="tabular" />
+            <param name="q_cutoff" value="6" />
+            <param name="discard_failed" value="true" />
+            <output name="html_file">
+                <assert_contents>
+                    <has_text_matching expression="&lt;td&gt;Total Reads&lt;/td&gt;\s*&lt;td&gt;9107&lt;/td&gt;" />
+                    <has_text_matching expression="&lt;td&gt;Total Reads&lt;/td&gt;\s*&lt;td&gt;9107&lt;/td&gt;" />
+                </assert_contents>
+            </output>
+        </test>
+
     </tests>
     <help>
 <![CDATA[
