@@ -1,0 +1,113 @@
+<tool id="b2b_bam2consensus" name="BAM to consensus" version="0.003">
+    <description>Re-call consensus based on BAM mapping</description>
+
+    <!-- ***************************************************************** -->
+
+    <requirements>
+    <!--
+        <requirement type="package" version="0.003">b2b-utils</requirement>
+    -->
+        <requirement type="package" version="7.402">mafft</requirement>
+        <!-- ncurses needs to be explicitly pulled from conda-forge for samtools to work -->
+        <requirement type="package" version="6.1">ncurses</requirement>
+        <requirement type="package" version="1.7">samtools</requirement>
+    </requirements>
+
+    <!-- ***************************************************************** -->
+
+    <version_command>bam2consensus --version | perl -wnE'print "$1\n" for /bam2consensus v(.+)/g'</version_command>
+
+    <!-- ***************************************************************** -->
+
+    <command detect_errors="aggressive">
+    <![CDATA[
+
+    ln -s $ref_file ref.tmp;
+    ln -s $in_bam in.bam;
+    samtools faidx ref.tmp;
+    samtools index in.bam;
+
+    bam2consensus
+        --ref ref.tmp
+        --bam in.bam
+        --min_qual $min_qual
+        --min_depth $min_depth
+        --trim $trim
+        --window $window
+        --bg_bin_figs $bg_bin_figs
+        --verbose
+        #if $output_fasta:
+            --consensus $out_fasta
+        #end if
+        #if $output_tsv:
+            --table $out_tsv
+        #end if
+        #if $output_bg:
+            --bedgraph $out_bg
+        #end if
+    ]]>
+    </command>
+
+    <!-- ***************************************************************** -->
+
+    <inputs>
+        <param name="in_bam" type="data" format="bam" label="BAM mapping file to use for consensus calling" help="BAM format" />
+        <param name="ref_file" type="data" format="fasta" label="Reference sequence used for generating BAM" help="FASTA format" />
+        <param argument="min_qual" size="4" type="integer" value="10" min="0" label="Minimum base quality to use for frequency calculations" />
+        <param argument="min_depth" size="4" type="integer" value="3" min="0" label="Minimum consensus depth to call a base (otherwise called as N)" />
+        <param argument="trim" size="4" type="float" value="0.2" min="0" label="Fraction to trim from each end when calculating trimmed mean of error window" />
+        <param argument="window" size="4" type="integer" value="30" min="3" label="Size of sliding window used to calculate local error rates" />
+        <param argument="bg_bin_figs" size="4" type="integer" value="0" min="0" label="Number of sig figs used to bin bedgraph depths (0 = no binning)" />
+	    <param name="output_fasta" type="boolean" label="Output FASTA consensus" />
+	    <param name="output_tsv" type="boolean" label="Output consensus/frequency table (tab-delim)" />
+	    <param name="output_bg" type="boolean" label="Output bedgraph coverage file" />
+    </inputs>
+
+    <!-- ***************************************************************** -->
+
+    <outputs>
+        <data name="out_fasta" format="fasta" label="consensus (FASTA)">
+            <filter>output_fasta is True</filter>
+        </data>
+        <data name="out_tsv" format="tabular" label="frequency table (tab-delim)">
+            <filter>output_tsv is True</filter>
+        </data>
+        <data name="out_bg" format="bedgraph" label="coverage depth (bedgraph)">
+            <filter>output_bg is True</filter>
+        </data>
+    </outputs>
+
+    <!-- ***************************************************************** -->
+
+    <tests>
+        <test>
+            <param name="in_bam" value="b2c.bam" ftype="bam" />
+            <param name="ref_file" value="b2c.mod.fa" ftype="fasta" />
+            <param name="min_qual" value="8" />
+            <param name="min_depth" value="3" />
+            <param name="bg_bin_figs" value="1" />
+            <param name="output_fasta" value="True" />
+            <param name="output_tsv" value="True" />
+            <param name="output_bg" value="True" />
+            <output name="out_fasta" file="b2c.out.fa" compare="diff" />
+            <output name="out_tsv" file="b2c.out.tsv" compare="diff" />
+            <output name="out_bg" file="b2c.out.bg" compare="diff" />
+        </test>
+    </tests>
+
+    <!-- ***************************************************************** -->
+
+    <help>
+
+    bam2consensus is a utility from b2b-utils for calling a new consensus
+    sequence (and producing associated coverage depth and tabular outputs)
+    based on raw read mapping to a genome assembly.
+
+    </help>
+
+    <!-- ***************************************************************** -->
+
+    <citations>
+    </citations>
+
+</tool>

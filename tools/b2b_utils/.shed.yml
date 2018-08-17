@@ -1,0 +1,10 @@
+name: b2b_utils
+owner: jdv
+description: b2b_utils - bioinformatics utilities from BASE2BIO
+homepage_url: https://github.com/jvolkening/b2b-utils
+long_description: |
+    A varied set of utilities for genomics and sequence analysis released by BASE2BIO.
+remote_repository_url: https://github.com/jvolkening/galaxy-tools/tree/master/tools/b2b_utils
+type: unrestricted
+categories:
+  - Sequence Analysis
