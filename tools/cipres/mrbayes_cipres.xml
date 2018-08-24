@@ -1,0 +1,185 @@
+<?xml version="1.0"?>
+<tool id="mrbayes_cipres" name="MrBayes" version="0.001">
+  <description>Run MrBayes through the CIPRES service</description>
+  <version_command>mb version 2> /dev/null | grep -e "v[0-9\.]\.*" | awk '{print $2}' | awk -F, '{print $1}' | sed 's/^.//'</version_command>
+  <stdio>
+    <exit_code range="1:" level="fatal" description="Job runtime error" />
+    <exit_code range=":-1" level="fatal" description="CIPRES submission error" />
+  </stdio>
+  <command interpreter="perl">
+    mrbayes_cipres.pl --input $data --runtime $runtime --user $__user_email__ --name ${data.name}
+    #if not $parm.has_cmd_block
+        --cmd $command_file
+    #end if
+    > $outfile;
+  </command>
+  <configfiles>
+    <configfile name="command_file">
+begin mrbayes;
+#if not $parm.has_cmd_block:
+set seed=$parm.general.seed;
+set swapseed=$parm.general.swapseed;
+set quitonerror=yes;
+#if str($parm.general.outgroup) != ""
+outgroup $parm.general.outgroup;
+#end if
+$parm.lk.model;
+lset rates=$parm.lk.rates;
+mcmcp ngen=$parm.mcmc.ngen nruns=$parm.mcmc.nrun nchains=$parm.mcmc.nchain samplefreq=$parm.mcmc.samplefreq printfreq=$parm.mcmc.printfreq relburnin=yes burninfrac=$parm.mcmc.burninfrac;
+#if str($parm.mcmc.stoprule.bool) == "yes"
+mcmcp mcmcdiagn=yes stoprule=yes stopval=$parm.mcmc.stoprule.val;
+#end if
+mcmc;
+#if $parm.output.sump
+sump relburnin=yes burninfrac=$parm.mcmc.burninfrac;
+#end if
+#if $parm.output.sumt
+sumt relburnin=yes burninfrac=$parm.mcmc.burninfrac;
+#end if
+$parm.output.plot
+#end if
+end;
+    </configfile>
+  </configfiles>
+  <inputs>
+    <param name="data" type="data" format="nex" label="Nexus input file"/>
+    <param name="runtime" type="float" value="0.5" label="Requested runtime (hrs)">
+        <validator type="in_range" min="0.1" max="inf" message="Must be greater than or equal to 0.1"/>
+    </param>
+    <conditional name="parm">
+    <param name="has_cmd_block" type="boolean" truevalue="1" falsevalue="0" checked="true" label="Input file includes mrbayes commands?" />
+    <when value="0">
+
+        <section name="general" title="General options" expanded="false">
+            <param name="outgroup" type="text" label="Outgroup" size="10" help="The name or number identifying one taxon from the data." />
+            <param name="seed" type="integer" label="Seed" optional="false" value="5" help="Specify a seed with which to run the job.">
+                <validator type="in_range" min="1" max="inf" message="Must be greater than or equal to 1"/>
+            </param>
+            <param name="swapseed" type="integer" label="Swap Seed" optional="false" value="5" help="Specify a swap seed with which to run the job.">
+                <validator type="in_range" min="1" max="inf" message="Must be greater than or equal to 1"/>
+            </param>
+        </section>
+
+        <section name="lk" title="Likelihood options" expanded="false">
+            <param name="model" type="select" label="Choose model">
+                <sanitizer sanitize="False" />
+                <option value="lset nst=6" selected="true"                >GRT</option>
+                <option value="lset nst=6; prset statefreqpr=fixed(equal)">SYM</option>
+                <option value="lset nst=2"                                >HKY</option>
+                <option value="lset nst=2; prset statefreqpr=fixed(equal)">K2P</option>
+                <option value="lset nst=1"                                >F81</option>
+                <option value="lset nst=1; prset statefreqpr=fixed(equal)">JC </option>
+                <option value="lset nst=mixed"                            >Mixed </option>
+                <help>Models are defined below and are only valid for nucleotide data.</help>
+            </param>
+            <param name="rates" type="select" label="Choose rates">
+                <option value="equal" selected="true" />
+                <option value="gamma"                 />
+                <option value="propinv"               />
+                <option value="invgamma"              />
+                <option value="adgamma"               />
+            </param>
+        </section>
+
+        <section name="mcmc" title="MCMC options" expanded="false">
+            <param name="ngen" type="integer" label="Number of generations" value="1000000" >
+                <validator type="in_range" min="1" max="inf" message="Must be greater than or equal to 1"/>
+            </param>
+            <param name="nrun" type="integer" label="Number of runs" value="2" >
+                <validator type="in_range" min="1" max="2" message="Must be 1 or 2 for CIPRES submissions"/>
+            </param>
+            <param name="nchain" type="integer" label="Number of chains" value="4" >
+                <validator type="in_range" min="1" max="4" message="Must be between 1 and 4 for CIPRES submissions"/>
+            </param>
+            <param name="samplefreq" type="integer" label="Sample frequency" value="1000" >
+                <validator type="in_range" min="1" max="inf" message="Must be greater than or equal to 1"/>
+                <help>Frequency with which output is written to files</help>
+            </param>
+            <param name="printfreq" type="integer" label="Print frequency" value="1000" >
+                <validator type="in_range" min="1" max="inf" message="Must be greater than or equal to 1"/>
+                <help>Frequency with which output is printed to the screen</help>
+            </param>
+            <param name="burninfrac" type="float" label="Burn-in fraction" value="0.25">
+                <validator type="in_range" min="0.01" max=".50" message="Must be between 0.01 and .50"/>
+                <help>Fraction of samples to discard when summarizing</help>
+            </param>
+            <conditional name="stoprule">
+                <param name="bool" type="boolean" label="Stop rule?" truevalue="1" falsevalue="0" checked="true"/>
+                <when value="0"></when>
+                <when value="1">
+                    <param name="val" type="float" label="Convergence cutoff" value="0.01">
+                        <validator type="in_range" min="0.01" max=".50" message="Must be between 0.01 and .50"/>
+                        <help>Cutoff for convergence value between runs at which processing will stop</help>
+                    </param>
+                </when>
+            </conditional>
+        </section>
+               
+        <section name="output" title="Output options">
+            <param name="sumt" type="boolean" truevalue="sumt;" falsevalue="" label="Include sumt?" checked="true" help="Summarizes the trees" />
+            <param name="sump" type="boolean" truevalue="sump;" falsevalue="" label="Include sump?" checked="false" help="Summarizes sampled parameter value" />
+            <param name="plot" type="boolean" truevalue="plot;" falsevalue="" label="Include plot?" checked="false" help="Creates an x-y graph of the parameter over the course of the chain" />
+        </section>
+
+    </when>
+    <when value="1"></when>
+  </conditional>
+  </inputs>
+  <outputs>
+    <data name="outfile" format="txt" label="MrBayes on ${on_string}">
+      <discover_datasets pattern="(?P&lt;designation&gt;.+)" directory="output" visible="true" />
+    </data>
+  </outputs>
+
+  <tests></tests>
+
+<help>
+
+**Basic Usage**
+
+This tool takes as input a NEXUS file containing a multiple sequence alignment
+and optionally a MrBayes command block. If your file doesn't contain a MrBayes
+command block, a limited number of configurable options are available in the
+Galaxy interface.
+
+-----
+
+**Model Definitions**
+
+Models are defined by the following MrBayes options::
+
+ GRT: lset nst=6;
+ SYM: lset nst=6; prset statefreqpr=fixed(equal);
+ HKY: lset nst=2;
+ K2P: lset nst=2; prset statefreqpr=fixed(equal);
+ F81: lset nst=1;
+ JC: lset nst=1; prset statefreqpr=fixed(equal);
+ Mixed: lset nst=mixed;
+
+-----
+
+**Runtime specification**
+
+The CIPRES service requires that you request a specific "walltime" for each
+job, which is the maximum amount of elapsed time that the job will be allowed to run
+on the cluster. The default is 0.5 hours, which usually means your job will
+run immediately but is probably not long enough for most jobs (or you wouldn't
+be using CIPRES). Choose this value carefully - if your request is too short
+your job may be killed before it completes, but if you ask for too much time
+your job may sit in the queue for a long time waiting to be scheduled.
+
+-----
+
+**Advanced Usage**
+
+This Galaxy wrapper provides a limited set of configurable options which only
+scratch the surface of the capabilities of the software. Users needing more
+advanced capabilities can still use this tool but will need to write their own
+command blocks for inclusion directly in their input file. Please see the
+MrBayes documentation for available options and syntax.
+
+</help>
+<citations>
+  <citation type="doi">10.1093/bioinformatics/17.8.754</citation>
+</citations>
+</tool>
