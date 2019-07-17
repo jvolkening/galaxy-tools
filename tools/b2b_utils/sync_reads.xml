@@ -5,7 +5,8 @@
     <!-- ***************************************************************** -->
 
     <requirements>
-        <requirement type="package" version="0.003">b2b-utils</requirement>
+        <!-- <requirement type="package" version="0.003">b2b-utils</requirement> -->
+        <requirement type="package" version="0.006007">perl-biox-seq</requirement>
     </requirements>
 
     <!-- ***************************************************************** -->

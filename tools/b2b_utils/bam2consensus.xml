@@ -7,10 +7,12 @@
     <!--
         <requirement type="package" version="0.003">b2b-utils</requirement>
     -->
-        <requirement type="package" version="7.402">mafft</requirement>
+        <requirement type="package" version="7.407">mafft</requirement>
         <!-- ncurses needs to be explicitly pulled from conda-forge for samtools to work -->
         <requirement type="package" version="6.1">ncurses</requirement>
-        <requirement type="package" version="1.7">samtools</requirement>
+        <requirement type="package" version="1.9">samtools</requirement>
+        <requirement type="package" version="0.006007">perl-biox-seq</requirement>
+        <requirement type="package" version="1.23">perl-file-which</requirement>
     </requirements>
 
     <!-- ***************************************************************** -->
