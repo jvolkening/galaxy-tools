@@ -1,4 +1,4 @@
-<tool id="b2b_count_mapped" name="Count mapped reads" version="0.001">
+<tool id="b2b_count_mapped_reads" name="Count mapped reads" version="0.001">
 
     <description>Count reads uniquely mapped to each reference sequence</description>
 
