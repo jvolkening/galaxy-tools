@@ -1,4 +1,5 @@
 <tool id="b2b_bam2consensus" name="BAM to consensus" version="0.003">
+
     <description>Re-call consensus based on BAM mapping</description>
 
     <!-- ***************************************************************** -->

@@ -1,0 +1,80 @@
+<tool id="b2b_summarize_run" name="Summarize run" version="0.002">
+
+    <description>Summarize sequencing run and assembly statistics</description>
+
+    <!-- ***************************************************************** -->
+
+    <requirements>
+    <!--
+        <requirement type="package" version="0.003">b2b-utils</requirement>
+    -->
+        <requirement type="package" version="0.006007">perl-biox-seq</requirement>
+    </requirements>
+
+    <!-- ***************************************************************** -->
+
+    <version_command>echo "0.002"</version_command>
+
+    <!-- ***************************************************************** -->
+
+    <command detect_errors="aggressive">
+    <![CDATA[
+
+    perl $__tool_directory__/summarize_run.pl
+        --raw_1 $input1
+        --raw_2 $input2
+        --filt_1 $input3
+        --filt_2 $input4
+        --consensus $input5
+        --bedgraph $input6
+        --fastqc_1 $input7
+        --fastqc_2 $input8
+        --out      $report
+        --threads "\${GALAXY_SLOTS:-1}"
+    ;
+
+    ]]>
+    </command>
+
+    <!-- ***************************************************************** -->
+
+    <inputs>
+	    <param format="fastqsanger,fastq" name="input1" type="data" label="Raw forward reads" />
+	    <param format="fastqsanger,fastq" name="input2" type="data" label="Raw reverse reads" />
+	    <param format="fastqsanger,fastq" name="input3" type="data" label="Filtered/synced forward reads" />
+	    <param format="fastqsanger,fastq" name="input4" type="data" label="Filtered/synced reverse reads" />
+	    <param format="fasta" name="input5" type="data" label="Consensus (FASTA)" />
+	    <param format="bedgraph" name="input6" type="data" label="Coverage (bedgraph)" />
+	    <param format="txt" name="input7" type="data" label="Raw FastQC (forward reads)" />
+	    <param format="txt" name="input8" type="data" label="Raw FastQC (reverse reads)" />
+    </inputs>
+
+    <!-- ***************************************************************** -->
+
+    <outputs>
+       <data format="tabular" name="report" label="Run/assembly summary" />
+    </outputs>
+
+    <!-- ***************************************************************** -->
+
+    <tests>
+    </tests>
+
+    <!-- ***************************************************************** -->
+
+    <help>
+
+    `summarize_run` is a Galaxy-only utility from BASE2BIO that reports a
+    number of summary statistics for a sequencing run and assembly. It was
+    written to support workflows at the USDA Southeast Poultry Research
+    Laboratory and may be of limited general-purpose application.
+
+    </help>
+
+    <!-- ***************************************************************** -->
+
+    <citations>
+    </citations>
+
+</tool>
+

@@ -1,0 +1,72 @@
+<tool id="b2b_count_mapped" name="Count mapped reads" version="0.001">
+
+    <description>Count reads uniquely mapped to each reference sequence</description>
+
+    <!-- ***************************************************************** -->
+
+    <requirements>
+        <!-- ncurses needs to be explicitly pulled from conda-forge for samtools to work -->
+        <requirement type="package" version="6.1">ncurses</requirement>
+        <requirement type="package" version="1.9">samtools</requirement>
+    </requirements>
+
+    <!-- ***************************************************************** -->
+
+    <version_command>echo "0.001"</version_command>
+
+    <!-- ***************************************************************** -->
+
+    <command detect_errors="aggressive">
+    <![CDATA[
+
+    #if $uniq:
+        samtools view -F 0x04 -F 0x100 -F 0x800 $in
+    #else
+        samtools view -F 0x04 $in
+    #end if
+    | cut -f3
+    | sort
+    | uniq -c
+    | awk -v OFS='\t' '{print $2,$1}'
+    > $out
+
+    ]]>
+    </command>
+
+    <!-- ***************************************************************** -->
+
+    <inputs>
+        <param name="in" type="data" format="bam" label="Read mapping" help="BAM format" />
+        <param name="uniq" type="boolean" checked="True" label="Exclude ambiguous mappings" />
+    </inputs>
+
+    <!-- ***************************************************************** -->
+
+    <outputs>
+        <data name="out" format="tabular" label="Read counts" />
+    </outputs>
+
+    <!-- ***************************************************************** -->
+
+    <tests>
+        <test>
+            <param name="in" value="b2c.bam" ftype="bam" />
+            <output name="out" file="b2c.counts" compare="diff" />
+        </test>
+    </tests>
+
+    <!-- ***************************************************************** -->
+
+    <help>
+
+    `count_mapped_reads` is a Galaxy-only utility from BASE2BIO that simply
+    reports the number of reads mapped to each sequence from a BAM input file.
+
+    </help>
+
+    <!-- ***************************************************************** -->
+
+    <citations>
+    </citations>
+
+</tool>
