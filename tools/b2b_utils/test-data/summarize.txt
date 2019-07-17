@@ -1,0 +1,14 @@
+----------------------------------------
+Summary
+----------------------------------------
+number of scaffolds: 10
+total length:        31589
+average length:      3159
+G/C content:         50%
+ambiguous content:   12%
+longest scaffold:    6780
+N50:                 5745
+N90:                 2339
+N95:                 1297
+shortest scaffold:   209
+----------------------------------------

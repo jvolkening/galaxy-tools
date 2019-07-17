@@ -5,7 +5,7 @@ homepage_url: http://mira-assembler.sourceforge.net
 long_description: |
     Wrapper for the latest version of the MIRA assembler in the 3.x series.
     This wrapper allows for addition of arbitrary parameters to open up the
-    full power of MIRA.
+    full power of MIRA. Use at your own risk.
 remote_repository_url: https://github.com/jvolkening/galaxy-tools/tree/master/tools/mira3
 type: unrestricted
 categories:

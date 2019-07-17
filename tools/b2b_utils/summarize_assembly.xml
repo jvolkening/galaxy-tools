@@ -1,0 +1,99 @@
+<tool id="b2b_summarize_assembly" name="Summarize assembly" version="0.02">
+
+    <description>Calculate and print basic assembly summary stats</description>
+
+    <!-- ***************************************************************** -->
+
+    <requirements>
+    <!--
+        <requirement type="package" version="0.003">b2b-utils</requirement>
+    -->
+        <requirement type="package" version="0.006007">perl-biox-seq</requirement>
+    </requirements>
+
+    <!-- ***************************************************************** -->
+
+    <version_command>summarize_assembly --version | perl -wnE'print "$1\n" for /summarize_assembly v(.+)/g'</version_command>
+
+    <!-- ***************************************************************** -->
+
+    <command detect_errors="aggressive">
+    <![CDATA[
+
+    summarize_assembly
+    --fasta $input1
+    --cutoffs $cutoffs
+    #if $split_N:
+	--split_N
+    #end if
+    #if $strip_N:
+	--strip_N
+    #end if
+
+    > $report
+    ;
+
+    ]]>
+    </command>
+
+    <!-- ***************************************************************** -->
+
+    <inputs>
+	    <param format="fasta" name="input1" type="data" label="Assembly in FASTA format" />
+	    <param name="cutoffs" type="text" size="60" value="50 90" label="Nx cutoffs to calculate (space-separated)">
+		   <sanitizer invalid_char="">
+		      <valid initial="string.digits"><add value=" " /></valid>
+		   </sanitizer>
+	    </param>
+	    <param name="strip_N" type="boolean" label="Strip Ns prior to calculations" />
+	    <param name="split_N" type="boolean" label="Split scaffolds on Ns (e.g. report contig-level summary)" />
+    </inputs>
+
+    <!-- ***************************************************************** -->
+
+    <outputs>
+       <data format="txt" name="report" label="${tool.name} on ${on_string}" />
+    </outputs>
+
+    <!-- ***************************************************************** -->
+
+    <tests>
+        <test>
+            <param name="input1" value="assembly.fa" ftype="fasta" />
+            <param name="cutoffs" value="50 90 95" />
+            <output name="report" file="summarize.txt" compare="diff" />
+        </test>
+        <test>
+            <param name="input1" value="assembly.fa" ftype="fasta" />
+            <param name="cutoffs" value="50 90 95" />
+            <param name="strip_N" value="True" />
+            <output name="report" file="summarize.strip.txt" compare="diff" />
+        </test>
+        <test>
+            <param name="input1" value="assembly.fa" ftype="fasta" />
+            <param name="cutoffs" value="50 90 95" />
+            <param name="split_N" value="True" />
+            <output name="report" file="summarize.split.txt" compare="diff" />
+        </test>
+    </tests>
+
+    <!-- ***************************************************************** -->
+
+    <help>
+
+    summarize_assembly is a utility from b2b-utils. It takes a FASTA file and
+    optionally a list of cutoff values as input and prints out summary
+    information about the contigs/scaffolds contained in the file. You can, of
+    course, supply a FASTA file of any sort of nucleic acid sequences, but the
+    summary information makes most sense for contigs from genomic sequencing
+    assemblies.
+
+    </help>
+
+    <!-- ***************************************************************** -->
+
+    <citations>
+    </citations>
+
+</tool>
+
