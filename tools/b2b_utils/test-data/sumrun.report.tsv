@@ -1,0 +1,2 @@
+#id	raw_read_pairs	filt_read_pairs	frag_len_mean	frag_len_sd	forward_qual	reverse_qual	n_contigs	coverage_depth
+cons	150	125	284	184	2|36|37|38|38	16|34|37|38|38	1	0|32|39|56|80
