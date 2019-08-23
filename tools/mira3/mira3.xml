@@ -261,6 +261,28 @@ Ion Torrent).
 
 It is particularly suited to small genomes such as bacteria.
 
+**Citation**
+
+This tool was forked from the original by Peter J. Cock:
+
+http://toolshed.g2.bx.psu.edu/view/peterjc/mira_assembler
+
+https://github.com/peterjc/galaxy_mira/tree/master/tools/mira3
+
+
+If you use this Galaxy tool in work leading to a scientific publication please
+cite the following papers:
+
+Peter J.A. Cock, Björn A. Grüning, Konrad Paszkiewicz and Leighton Pritchard (2013).
+Galaxy tools and workflows for sequence analysis with applications
+in molecular plant pathology. PeerJ 1:e167
+https://doi.org/10.7717/peerj.167
+
+Bastien Chevreux, Thomas Wetter and Sándor Suhai (1999).
+Genome Sequence Assembly Using Trace Signals and Additional Sequence Information.
+Computer Science and Biology: Proceedings of the German Conference on Bioinformatics (GCB) 99, pp. 45-56.
+http://www.bioinfo.de/isb/gcb99/talks/chevreux/main.html
+
     </help>
 
     <!-- ***************************************************************** -->
