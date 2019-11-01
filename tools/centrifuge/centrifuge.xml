@@ -1,11 +1,11 @@
-<tool id="centrifuge" name="Centrifuge" version="1.0.3">
+<tool id="centrifuge" name="Centrifuge" version="1.0.4_beta">
 
     <description>Read-based metagenome characterization</description>
 
     <!-- ***************************************************************** -->
 
     <requirements>
-        <requirement type="package" version="1.0.3">centrifuge</requirement>
+        <requirement type="package" version="1.0.4_beta">centrifuge</requirement>
     </requirements>
 
     <!-- ***************************************************************** -->
