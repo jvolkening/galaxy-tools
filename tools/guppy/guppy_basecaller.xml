@@ -1,0 +1,108 @@
+<tool id="ont_guppy" name="ONT Guppy" version="3.4.5">
+
+    <description>ONT production basecaller</description>
+
+    <!-- ***************************************************************** -->
+   
+    <!--
+    <requirements>
+        <requirement type="package" version="3.4.5">guppy</requirement>
+    </requirements>
+    -->
+
+    <!-- ***************************************************************** -->
+
+    <version_command>guppy_basecaller --version | perl -wnE'print "$1\n" for /Version (.+)$/g'</version_command>
+
+    <!-- ***************************************************************** -->
+
+    <command detect_errors="aggressive">
+    <![CDATA[
+
+    python3 $__tool_directory__/guppy_basecaller.py \
+        $input \
+        $output \
+        $fast5_out \
+        $enable_filt \
+        $hp_correct \
+        \${GALAXY_SLOTS:-1}
+
+    ]]>
+    </command>
+
+    <!-- ***************************************************************** -->
+
+    <inputs>
+
+        <param name="input" type="data" format="fast5.tar" label="Input reads" />
+        <param name="fast5_out" type="boolean" checked="false" label="Output as FAST5">
+        <param name="demux" type="boolean" checked="false" label="Demultiplex" />
+        <param name="enable_filt" type="boolean" checked="false" label="Enable quality filtering" />
+        <param name="hp_correct" type="boolean" checked="false" label="Perform homopolymer correction" />
+        <param name="output_table" type="boolean" checked="false" label="Include table in output" />
+
+    </inputs>
+
+    <!-- ***************************************************************** -->
+
+    <outputs>
+
+        <data name="output" format="fastq" label="${tool.name} on ${on_string} (reads)">
+            <filter>demux is False</filter>
+            <change_format>
+                <when input="fast5_out" value="true" format="fast5.tar.gz" />
+            </change_format>
+        </data>
+        <collection type="list" name="output_collection_fastq" label="${tool.name} on ${on_string} (reads)">
+            <filter>demux is True and fast5_out == False</filter>
+            <discover_datasets pattern="(?P&lt;name&gt;.*)" directory="final" format="fastqsanger" />
+        </collection>
+        <collection type="list" name="output_collection_fast5" label="${tool.name} on ${on_string} (reads)">
+            <filter>demux is True and fast5_out == True</filter>
+            <discover_datasets pattern="(?P&lt;name&gt;.*)" directory="final" format="fast5.tar.gz" />
+        </collection>
+        <data name="table" format="tabular" from_work_dir="out_dir/sequencing_summary.txt" label="${tool.name} on ${on_string} (table)">
+            <filter>output_table is True</filter>
+        </data>
+
+    </outputs>
+
+    <!-- ***************************************************************** -->
+
+    <tests>
+        <test>
+            <param name="input" value="test_data.fast5.tar.gz" ftype="fast5.tar.gz" />
+            <output name="output" file="test_data.fastq" compare="sim_size" delta="0"/>
+        </test>
+        <test>
+            <param name="input" value="test_data.fast5.tar.gz" ftype="fast5.tar.gz" />
+            <param name="enable_filt" value="false" />
+            <output name="output" file="test_data_nofilt.fastq" compare="sim_size" delta="0"/>
+        </test>
+    </tests>
+
+    <!-- ***************************************************************** -->
+
+    <help>
+    <![CDATA[
+
+**Description**
+
+Guppy is a tool for basecalling Oxford Nanopore reads. It is distributed by
+ONT to authorized community members only and thus is not packaged through
+Galaxy or Bioconda. End users are responsible for installing and testing the
+Guppy software themselves and ensuring that it is in the galaxy user $PATH.
+
+The Galaxy wrapper has modified guppy to take a gzip tarball of FAST5 reads
+as input, such as can be produced by `poretools combine`, and always outputs a
+single FASTQ file.
+
+    ]]>
+    </help>
+
+    <!-- ***************************************************************** -->
+    
+    <citations>
+    </citations>
+
+</tool>
