@@ -64,17 +64,17 @@ extract_kraken_reads.py
             </when>
 
         </conditional>
-        <param argument="results" format="tabular" type="data" label="Results" help="Results (classification) file from Kraken/KrakenUniq/Kraken2" />
-        <param argument="report" format="tabular" type="data" label="Report" optional="True" help="Report file from Kraken/KrakenUniq/Kraken2" />
+        <param name="results" argument="-k" format="tabular" type="data" label="Results" help="Results (classification) file from Kraken/KrakenUniq/Kraken2" />
+        <param name="report" argument="--report" format="tabular" type="data" label="Report" optional="True" help="Report file from Kraken/KrakenUniq/Kraken2" />
 
-        <param argument="--taxid" type="text" value="" label="Taxonomic ID(s) to match" help="Space-delimited list of taxonomic IDs for which to extract matching reads">
+        <param name="taxid" argument="--taxid" type="text" value="" label="Taxonomic ID(s) to match" help="Space-delimited list of taxonomic IDs for which to extract matching reads">
             <validator type="regex" message="Enter a space-separated list of numeric tax IDs">^\d+[\d ]*$</validator>
         </param>
-        <param argument="--max" type="integer" value="100000000" min="1" label="Maximum reads to save" help="Maximum number of reads to save for each ID" />
-        <param argument="--exclude" type="boolean" value="False" truevalue="--exclude" falsevalue="" label="Invert output" help="Instead of finding reads that match given taxonomic IDs, find all reads that DO NOT match given IDs" />
-        <param argument="--fastq-output" type="boolean" value="False" truevalue="--fastq-output" falsevalue="" label="Output as FASTQ" help="Write output as FASTQ instead of the default FASTA" />
-        <param argument="--include-parents" type="boolean" value="False" truevalue="--include-parents" falsevalue="" label="Include parents" help="Include reads classified at parent levels of the specified tax IDs" />
-        <param argument="--include-children" type="boolean" value="False" truevalue="--include-children" falsevalue="" label="Include children" help="Include reads classified more specifically than the specified tax IDs" />
+        <param name="max" argument="--max" type="integer" value="100000000" min="1" label="Maximum reads to save" help="Maximum number of reads to save for each ID" />
+        <param name="exclude" argument="--exclude" type="boolean" value="False" truevalue="--exclude" falsevalue="" label="Invert output" help="Instead of finding reads that match given taxonomic IDs, find all reads that DO NOT match given IDs" />
+        <param name="fastq_output" argument="--fastq-output" type="boolean" value="False" truevalue="--fastq-output" falsevalue="" label="Output as FASTQ" help="Write output as FASTQ instead of the default FASTA" />
+        <param name="include_parents" argument="--include-parents" type="boolean" value="False" truevalue="--include-parents" falsevalue="" label="Include parents" help="Include reads classified at parent levels of the specified tax IDs" />
+        <param name="include_children" argument="--include-children" type="boolean" value="False" truevalue="--include-children" falsevalue="" label="Include children" help="Include reads classified more specifically than the specified tax IDs" />
 
     </inputs>
 
