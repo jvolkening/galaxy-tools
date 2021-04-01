@@ -1,0 +1,14 @@
+name: krakentools
+owner: jdv
+description: KrakenTools - Utilities for downstream analysis of Kraken/Kraken2/KrakenUniq/Bracken output
+homepage_url: https://github.com/jenniferlu717/KrakenTools
+long_description: |
+  KrakenTools is a suite of individual scripts designed for use with Kraken,
+  KrakenUniq, Kraken2, and Bracken. These scripts provide users of the above
+  classification/abundance estimation tools additional support primarily for
+  downstream analysis of Kraken/Bracken results.
+remote_repository_url: https://github.com/jvolkening/galaxy-tools/tree/master/tools/krakentools
+type: unrestricted
+categories:
+- Metagenomics
+- Convert Formats

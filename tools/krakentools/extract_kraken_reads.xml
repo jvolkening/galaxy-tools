@@ -1,0 +1,391 @@
+<tool id="krakentools_extract_kraken_reads" name="Extract Kraken Reads By ID" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" profile="20.01">
+    <description>Extract reads that were classified by the Kraken family at specified taxonomic IDs</description>
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+    <expand macro="requirements" />
+    <expand macro="stdio" />
+    <version_command>echo -n @TOOL_VERSION@</version_command>
+
+    <command detect_errors="exit_code"><![CDATA[
+
+#if $library.type == 'paired':
+    #set input_1 = $library.input_1
+    #set input_2 = $library.input_2
+#else if $library.type == 'paired_collection'
+    #set input_1 = $library.input_1.forward
+    #set input_2 = $library.input_1.reverse
+#else
+    #set input_1 = $library.input_1
+#end if
+
+## do not quote $taxid
+extract_kraken_reads.py
+
+    -k '$results'
+    -s '$input_1'
+    -o '$output_1'
+    --taxid $taxid 
+    --max '$max'
+    $include_parents
+    $include_children
+    $exclude
+    $fastq_output
+#if str( $library.type ) != "single":
+    -s2 '$input_2'
+    -o2 '$output_2'
+#end if
+#if $include_parents or $include_children:
+    --report $report
+#end if
+    
+    ]]></command>
+    <inputs>
+
+        <!-- Reads -->
+        <conditional name="library">
+            <param name="type" type="select" label="Single or paired reads?">
+                <option value="single">Single</option>
+                <option value="paired">Paired</option>
+                <option value="paired_collection">Paired Collection</option>
+            </param>
+
+            <when value="single">
+                <param name="input_1" format="fastq,fastqsanger,fasta" type="data" label="FASTQ/A file" help="FASTQ or FASTQ input reads" />
+            </when>
+
+            <when value="paired">
+                <param name="input_1" format="fastq,fastqsanger,fasta" type="data" label="FASTQ/A forward file" help="FASTQ or FASTQ input reads" />
+                <param name="input_2" format="fastq,fastqsanger,fasta" type="data" label="FASTQ/A reverse file" help="FASTQ or FASTQ input reads" />
+            </when>
+
+            <when value="paired_collection">
+                <param name="input_1" format="fastq,fastqsanger,fasta" type="data_collection" collection_type="paired" label="Paired Collection" help="FASTQ or FASTA read pair collection" />
+            </when>
+
+        </conditional>
+        <param argument="results" format="tabular" type="data" label="Results" help="Results (classification) file from Kraken/KrakenUniq/Kraken2" />
+        <param argument="report" format="tabular" type="data" label="Report" optional="True" help="Report file from Kraken/KrakenUniq/Kraken2" />
+
+        <param argument="--taxid" type="text" value="" label="Taxonomic ID(s) to match" help="Space-delimited list of taxonomic IDs for which to extract matching reads">
+            <validator type="regex" message="Enter a space-separated list of numeric tax IDs">^\d+[\d ]*$</validator>
+        </param>
+        <param argument="--max" type="integer" value="100000000" min="1" label="Maximum reads to save" help="Maximum number of reads to save for each ID" />
+        <param argument="--exclude" type="boolean" value="False" truevalue="--exclude" falsevalue="" label="Invert output" help="Instead of finding reads that match given taxonomic IDs, find all reads that DO NOT match given IDs" />
+        <param argument="--fastq-output" type="boolean" value="False" truevalue="--fastq-output" falsevalue="" label="Output as FASTQ" help="Write output as FASTQ instead of the default FASTA" />
+        <param argument="--include-parents" type="boolean" value="False" truevalue="--include-parents" falsevalue="" label="Include parents" help="Include reads classified at parent levels of the specified tax IDs" />
+        <param argument="--include-children" type="boolean" value="False" truevalue="--include-children" falsevalue="" label="Include children" help="Include reads classified more specifically than the specified tax IDs" />
+
+    </inputs>
+
+    <outputs>
+        <data name="output_1" format="fasta" metadata_source="input_1" label="${tool.name} on ${on_string}: forward reads">
+            <change_format>
+                <when input="fastq_output" value="True" format="fastq" />
+            </change_format>
+        </data>
+        <data name="output_2" format="fasta" metadata_source="input_2" label="${tool.name} on ${on_string}: reverse reads" >
+            <filter>(library['type'] == 'paired' or library['type'] == 'paired_collection')</filter>
+            <change_format>
+                <when input="fastq_output" value="True" format="fastq" />
+            </change_format>
+        </data>
+    </outputs>
+
+    <tests>
+        <!-- test Kraken2 input, single input -->
+        <test>
+            <param name="input_1" value="R1.fq.gz" ftype="fastqsanger"/>
+            <param name="library|type" value="single"/>
+            <param name="results" value="kraken2.results" ftype="tabular"/>
+            <param name="taxid" value="11176"/>
+            <output name="output_1" file="out1.k2.11176.fa"/>
+        </test>
+        <!-- test paired input -->
+        <test>
+            <param name="input_1" value="R1.fq.gz" ftype="fastqsanger"/>
+            <param name="input_2" value="R2.fq.gz" ftype="fastqsanger"/>
+            <param name="library|type" value="paired"/>
+            <param name="results" value="kraken2.results" ftype="tabular"/>
+            <param name="taxid" value="11176"/>
+            <output name="output_1" file="out1.k2.11176.fa"/>
+            <output name="output_2" file="out2.k2.11176.fa"/>
+        </test>
+        <!-- test paired collection input -->
+        <test>
+            <param name="input_1">
+                <collection type="paired">
+                    <element name="forward" value="R1.fq.gz" ftype="fastqsanger"/>
+                    <element name="reverse" value="R2.fq.gz" ftype="fastqsanger"/>
+                </collection>
+            </param>
+            <param name="library|type" value="paired_collection"/>
+            <param name="results" value="kraken2.results" ftype="tabular"/>
+            <param name="taxid" value="11176"/>
+            <output name="output_1" file="out1.k2.11176.fa"/>
+            <output name="output_2" file="out2.k2.11176.fa"/>
+        </test>
+        <!-- test Kraken1 input, include children -->
+        <test>
+            <param name="input_1" value="R1.fq.gz" ftype="fastqsanger"/>
+            <param name="library|type" value="single"/>
+            <param name="results" value="kraken1.results" ftype="tabular"/>
+            <param name="report" value="kraken1.report" ftype="tabular"/>
+            <param name="taxid" value="11176"/>
+            <param name="include_children" value="True"/>
+            <output name="output_1" file="out1.k1.11176.children.fa"/>
+        </test>
+        <!-- test exclude -->
+        <test>
+            <param name="input_1" value="R1.fq.gz" ftype="fastqsanger"/>
+            <param name="library|type" value="single"/>
+            <param name="results" value="kraken1.results" ftype="tabular"/>
+            <param name="report" value="kraken1.report" ftype="tabular"/>
+            <param name="taxid" value="10386"/>
+            <param name="include_children" value="True"/>
+            <param name="exclude" value="True"/>
+            <output name="output_1" file="out1.k1.e10386.children.fa"/>
+        </test>
+        <!-- test max -->
+        <test>
+            <param name="input_1" value="R1.fq.gz" ftype="fastqsanger"/>
+            <param name="library|type" value="single"/>
+            <param name="results" value="kraken2.results" ftype="tabular"/>
+            <param name="taxid" value="11176"/>
+            <param name="max" value="2"/>
+            <output name="output_1" file="out1.k2.11176.max2.fa"/>
+        </test>
+        <!-- test include parents -->
+        <test>
+            <param name="input_1" value="R1.fq.gz" ftype="fastqsanger"/>
+            <param name="library|type" value="single"/>
+            <param name="results" value="kraken2.results" ftype="tabular"/>
+            <param name="taxid" value="11176"/>
+            <param name="include_parents" value="True"/>
+            <param name="report" value="kraken2.report" ftype="tabular"/>
+            <output name="output_1" file="out1.k2.11176.parents.fa"/>
+        </test>
+        <!-- test multiple tax IDs-->
+        <test>
+            <param name="input_1" value="R1.fq.gz" ftype="fastqsanger"/>
+            <param name="library|type" value="single"/>
+            <param name="results" value="kraken2.results" ftype="tabular"/>
+            <param name="taxid" value="10386 11176"/>
+            <param name="exclude" value="True"/>
+            <param name="include_parents" value="True"/>
+            <param name="report" value="kraken2.report" ftype="tabular"/>
+            <output name="output_1" file="out1.k2.exclude_both.fa"/>
+        </test>
+        <!-- test multiple tax IDs-->
+        <test expect_failure="True">
+            <param name="input_1" value="R1.fq.gz" ftype="fastqsanger"/>
+            <param name="library|type" value="single"/>
+            <param name="results" value="kraken2.results" ftype="tabular"/>
+            <param name="taxid" value="10386 f5"/>
+        </test>
+        <!-- test FASTQ output -->
+        <test>
+            <param name="input_1" value="R1.fq.gz" ftype="fastqsanger"/>
+            <param name="library|type" value="single"/>
+            <param name="results" value="kraken2.results" ftype="tabular"/>
+            <param name="taxid" value="11176"/>
+            <param name="fastq_output" value="True"/>
+            <output name="output_1" file="out1.k2.11176.fq"/>
+        </test>
+
+    </tests>
+
+    <help><![CDATA[
+
+.. class:: infomark
+
+**What it does**
+
+-------------------
+
+**Cutadapt** finds and removes adapter sequences, primers, poly-A tails and other types of unwanted sequence from your high-throughput sequencing reads.
+
+Cleaning your data in this way is often required: Reads from small-RNA sequencing contain the 3’ sequencing adapter because the read is longer than the molecule that is sequenced, such as in microRNA, or CRISPR data, or Poly-A tails that are useful for pulling out RNA from your sample but often you don’t want them to be in your reads.
+
+Cutadapt_ helps with these trimming tasks by finding the adapter or primer sequences in an error-tolerant way. It can also modify and filter reads in various ways. Cutadapt searches for the adapter in all reads and removes it when it finds it. Unless you use a filtering option, all reads that were present in the input file will also be present in the output file, some of them trimmed, some of them not. Even reads that were trimmed entirely (because the adapter was found in the very beginning) are output. All of this can be changed with options in the tool form above.
+
+The tool is based on the **Open Source** Cutadapt_ tool. See the complete `Cutadapt documentation`_ for additional details. If you use Cutadapt, please cite *Marcel, 2011* under **Citations** below.
+
+-------------------
+
+**Inputs**
+
+-------------------
+
+Input files for Cutadapt need to be:
+
+- FASTQ.GZ, FASTQ.BZ2, FASTQ or FASTA
+
+To trim an adapter, input the ADAPTER sequence in plain text or in a FASTA file e.g. AACCGGTT (with the characters: **$**, **^**, **...**, if anchored or linked).
+
+    =============================================   ===================
+    **Option**                                      **Sequence**
+    ---------------------------------------------   -------------------
+    3’ (End) Adapter                                ADAPTER
+    Anchored 3’ Adapter                             ADAPTER$
+
+    5’ (Front) Adapter                              ADAPTER
+    Anchored 5’ Adapter                             ^ADAPTER
+
+    5’ or 3’ (Both possible)                        ADAPTER
+
+    Linked Adapter - 3' (End) only                  ADAPTER1...ADAPTER2
+    Non-anchored Linked Adapter - 5' (Front) only   ADAPTER1...ADAPTER2
+    =============================================   ===================
+
+Below is an illustration of the allowed adapter locations relative to the read and depending on the adapter type:
+
+.. image:: $PATH_TO_IMAGES/adapters.svg
+
+
+-------------------
+
+*Example: Illumina TruSeq Adapters*
+
+-------------------
+
+If you have reads containing Illumina TruSeq adapters, for example, follow these steps.
+
+
+For Single-end reads as well as the first reads of Paired-end data:
+
+**Read 1**
+
+In the **3' (End) Adapters** option above, insert A + the “TruSeq Indexed Adapter” prefix that is common to all Indexed Adapter sequences, e.g insert:
+
+AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC
+
+
+For the second reads of Paired-end data:
+
+**Read 2**
+
+In the **3' (End) Adapters** option above, insert the reverse complement of the “TruSeq Universal Adapter”:
+
+AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT
+
+The adapter sequences can be found in the document `Illumina TruSeq Adapters De-Mystified`_.
+
+-----------
+
+**Outputs**
+
+-----------
+
+- Trimmed reads
+
+Optionally, under **Output Options** you can choose to output
+
+    * Report
+    * Info file
+
+
+**Report**
+
+Cutadapt can output per-adapter statistics if you select to output the report above.
+
+Example:
+
+        *This is cutadapt 1.16 with Python 3.6.4*
+
+        *Command line parameters: -j 1 --format=fastq -a AGATCGGAAGAGC --info-file=/tmp/tmpX0DlY1/files/000/dataset_21.dat --output=out1.fq --error-rate=0.1 --times=1 --overlap=3 input_f.fastq*
+        *Running on 1 core*
+        *Trimming 1 adapter with at most 10.0% errors in single-end mode ...*
+        *Finished in 0.00 s (1426 us/read; 0.04 M reads/minute).*
+
+        *=== Summary ===*
+
+        * Total reads processed:                       3*
+        * Reads with adapters:                         0 (0.0%)*
+        * Reads written (passing filters):             3 (100.0%)*
+
+        * Total basepairs processed:           102 bp*
+        * Total written (filtered):            102 bp (100.0%)*
+
+        *=== Adapter 1 ===*
+
+        *Sequence: AGATCGGAAGAGC; Type: regular 3'; Length: 13; Trimmed: 0 times.*
+
+
+**Info file**
+
+The info file contains information about the found adapters. The output is a tab-separated text file. Each line corresponds to one read of the input file.
+
+Columns contain the following data:
+
+    * **1st**:   Read name
+    * **2nd**:   Number of errors
+    * **3rd**:   0-based start coordinate of the adapter match
+    * **4th**:   0-based end coordinate of the adapter match
+    * **5th**:   Sequence of the read to the left of the adapter match (can be empty)
+    * **6th**:   Sequence of the read that was matched to the adapter
+    * **7th**:   Sequence of the read to the right of the adapter match (can be empty)
+    * **8th**:   Name of the found adapter
+    * **9th**:   Quality values corresponding to sequence left of the adapter match (can be empty)
+    * **10th**:  Quality values corresponding to sequence matched to the adapter (can be empty)
+    * **11th**:  Quality values corresponding to sequence to the right of the adapter (can be empty)
+
+The concatenation of columns 5-7 yields the full read sequence. Column 8 identifies the found adapter. Adapters without a name are numbered starting from 1. Fields 9-11 are empty if quality values are not available. Concatenating them yields the full sequence of quality values.
+
+If no adapter was found, the format is as follows:
+
+     #. Read name
+     #. The value -1
+     #. The read sequence
+     #. Quality values
+
+When parsing the file, be aware that additional columns may be added in the future. Note also that some fields can be empty, resulting in consecutive tabs within a line.
+
+If the --times option is used and greater than 1, each read can appear more than once in the info file. There will be one line for each found adapter, all with identical read names. Only for the first of those lines will the concatenation of columns 5-7 be identical to the original read sequence (and accordingly for columns 9-11). For subsequent lines, the shown sequence are the ones that were used in subsequent rounds of adapter trimming, that is, they get successively shorter.
+
+--------------------
+
+**More Information**
+
+--------------------
+
+See the excellent `Cutadapt documentation`_
+
+.. _Cutadapt: https://cutadapt.readthedocs.io/en/stable/
+.. _`Cutadapt documentation`: https://cutadapt.readthedocs.io/en/latest/index.html
+.. _`Illumina TruSeq Adapters De-Mystified`: http://tucf-genomics.tufts.edu/documents/protocols/TUCF_Understanding_Illumina_TruSeq_Adapters.pdf
+
+
+--------------------
+
+**Galaxy Wrapper Development**
+
+--------------------
+
+Author: Lance Parsons <lparsons@princeton.edu>
+
+    ]]></help>
+
+    <citations>
+        <citation type="bibtex">
+@article{marcel_cutadapt_2011,
+	title = {Cutadapt removes adapter sequences from high-throughput sequencing reads},
+	volume = {17},
+	copyright = {Authors who publish with this journal agree to the following terms:     Authors retain copyright and grant the journal right of first publication with the work simultaneously licensed under a  Creative Commons Attribution License  that allows others to share the work with an acknowledgement of the work's authorship and initial publication in this journal.   Authors  are able to enter into separate, additional contractual arrangements  for the non-exclusive distribution of the journal's published version of  the work (e.g., post it to an institutional repository or publish it in  a book), with an acknowledgement of its initial publication in this  journal.   Authors are permitted and encouraged to post their  work online (e.g., in institutional repositories or on their website)  prior to and during the submission process, as it can lead to productive  exchanges, as well as earlier and greater citation of published work  (See  The Effect of Open Access ).},
+	url = {http://journal.embnet.org/index.php/embnetjournal/article/view/200},
+	abstract = {When small RNA is sequenced on current sequencing machines, the resulting reads are usually longer than the RNA and therefore contain parts of the 3' adapter. That adapter must be found and removed error-tolerantly from each read before read mapping. Previous solutions are either hard to use or do not offer required features, in particular support for color space data. As an easy to use alternative, we developed the command-line tool cutadapt, which supports 454, Illumina and SOLiD (color space) data, offers two adapter trimming algorithms, and has other useful features.
+
+Cutadapt, including its MIT-licensed source code, is available for download at http://code.google.com/p/cutadapt/},
+	number = {1},
+	urldate = {2011-08-02},
+	journal = {EMBnet.journal},
+	author = {Marcel, Martin},
+	year = {2011},
+	note = {When small RNA is sequenced on current sequencing machines, the resulting reads are usually longer than the RNA and therefore contain parts of the 3' adapter. That adapter must be found and removed error-tolerantly from each read before read mapping. Previous solutions are either hard to use or do not offer required features, in particular support for color space data. As an easy to use alternative, we developed the command-line tool cutadapt, which supports 454, Illumina and SOLiD (color space) data, offers two adapter trimming algorithms, and has other useful features.   Cutadapt, including its MIT-licensed source code, is available for download at  http://code.google.com/p/cutadapt/},
+	keywords = {Adapter removal;, fastq, MicroRNA, Sequencing, Small RNA, software},
+	file = {Cutadapt removes adapter sequences from high-throughput sequencing reads | Martin | EMBnet.journal:/Users/lparsons/Library/Application Support/Firefox/Profiles/thd2t4je.default/zotero/storage/ZXZT4PSE/200.html:text/html}
+}
+        </citation>
+    </citations>
+
+</tool>
