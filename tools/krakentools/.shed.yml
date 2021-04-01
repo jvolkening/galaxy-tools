@@ -1,6 +1,6 @@
 name: krakentools
 owner: jdv
-description: KrakenTools - Utilities for downstream analysis of Kraken/Kraken2/KrakenUniq/Bracken output
+description: Utilities for downstream analysis of Kraken/Kraken2/KrakenUniq/Bracken output
 homepage_url: https://github.com/jenniferlu717/KrakenTools
 long_description: |
   KrakenTools is a suite of individual scripts designed for use with Kraken,
