@@ -81,13 +81,13 @@ extract_kraken_reads.py
     <outputs>
         <data name="output_1" format="fasta" metadata_source="input_1" label="${tool.name} on ${on_string}: forward reads">
             <change_format>
-                <when input="fastq_output" value="True" format="fastq" />
+                <when input="fastq_output" value="True" format="fastqsanger" />
             </change_format>
         </data>
         <data name="output_2" format="fasta" metadata_source="input_2" label="${tool.name} on ${on_string}: reverse reads" >
             <filter>(library['type'] == 'paired' or library['type'] == 'paired_collection')</filter>
             <change_format>
-                <when input="fastq_output" value="True" format="fastq" />
+                <when input="fastq_output" value="True" format="fastqsanger" />
             </change_format>
         </data>
     </outputs>
