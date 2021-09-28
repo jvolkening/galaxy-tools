@@ -6,19 +6,19 @@
 
     <requirements>
         <!-- <requirement type="package" version="0.003">b2b-utils</requirement> -->
-        <requirement type="package" version="0.006007">perl-biox-seq</requirement>
+        <requirement type="package" version="0.008002">perl-biox-seq</requirement>
     </requirements>
 
     <!-- ***************************************************************** -->
 
-    <version_command>sync_reads --version | perl -wnE'print "$1\n" for /sync_reads v(.+)/g'</version_command>
+    <version_command>perl $__tool_directory__/sync_reads --version | perl -wnE'print "$1\n" for /sync_reads v(.+)/g'</version_command>
 
     <!-- ***************************************************************** -->
 
     <command detect_errors="aggressive">
     <![CDATA[
 
-    sync_reads
+    perl $__tool_directory__/sync_reads
     --fwd $input1
     --rev $input2
     --fwd_out $fwd_out

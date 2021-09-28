@@ -17,7 +17,6 @@ my $fn_qc2;
 my $fn_consensus;
 my $fn_out;
 my $n_threads = 1;
-my $max_aln = 100000;
 
 GetOptions(
     'raw_1=s'     => \$fn_raw1,
@@ -30,7 +29,6 @@ GetOptions(
     'consensus=s' => \$fn_consensus,
     'out=s'       => \$fn_out,
     'threads=i'   => \$n_threads,
-    'max_aln=i'   => \$max_aln,
 );
 
 
@@ -50,14 +48,12 @@ for ($fn_raw1, $fn_raw2, $fn_filt1, $fn_filt2) {
 die "raw pair count mismatch\n" if ($counts[0] != $counts[1]);
 die "filtered pair count mismatch\n" if ($counts[2] != $counts[3]);
 
-#warn "calculating fragment length stats...\n";
+# read fragment stats from STDIN
 my @lens;
-open my $stream, '-|', "frag_lens","--forward",$fn_filt1,"--reverse",$fn_filt2,"--ref",$fn_consensus,"--threads",$n_threads,"--max_aln",$max_aln;
-while (<$stream>) {
+while (<STDIN>) {
     chomp $_;
     push @lens, $_;
 }
-close $stream;
 
 my $frag_mean = int( sum(@lens)/scalar(@lens)+0.5 );
 my $frag_sd = int( sqrt( sum( map {($_ - $frag_mean)**2} @lens)/(scalar(@lens)-1) )+0.5 );

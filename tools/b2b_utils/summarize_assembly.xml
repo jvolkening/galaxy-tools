@@ -8,19 +8,20 @@
     <!--
         <requirement type="package" version="0.003">b2b-utils</requirement>
     -->
-        <requirement type="package" version="0.006007">perl-biox-seq</requirement>
+        <requirement type="package" version="0.008002">perl-biox-seq</requirement>
+        <requirement type="package">perl-list-moreutils</requirement>
     </requirements>
 
     <!-- ***************************************************************** -->
 
-    <version_command>summarize_assembly --version | perl -wnE'print "$1\n" for /summarize_assembly v(.+)/g'</version_command>
+    <version_command>perl $__tool_directory__/summarize_assembly --version | perl -wnE'print "$1\n" for /summarize_assembly v(.+)/g'</version_command>
 
     <!-- ***************************************************************** -->
 
     <command detect_errors="aggressive">
     <![CDATA[
 
-    summarize_assembly
+    perl $__tool_directory__/summarize_assembly
     --fasta $input1
     --cutoffs $cutoffs
     #if $split_N:

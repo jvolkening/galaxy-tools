@@ -9,7 +9,7 @@
         <requirement type="package" version="0.003">b2b-utils</requirement>
     -->
         <requirement type="package" version="0.7.17">bwa</requirement>
-        <requirement type="package" version="0.006007">perl-biox-seq</requirement>
+        <requirement type="package" version="0.008002">perl-biox-seq</requirement>
         <requirement type="package" version="1.23">perl-file-which</requirement>
     </requirements>
 
@@ -21,8 +21,13 @@
 
     <command detect_errors="aggressive">
     <![CDATA[
-
-    perl $__tool_directory__/summarize_run.pl
+    perl $__tool_directory__/frag_lens
+        --forward "$in_filt1"
+        --reverse "$in_filt2"
+        --ref "$in_ref"
+        --threads  "\${GALAXY_SLOTS:-1}"
+        --max_aln 100000
+    | perl $__tool_directory__/summarize_run.pl
         --raw_1     $in_raw1
         --raw_2     $in_raw2
         --filt_1    $in_filt1

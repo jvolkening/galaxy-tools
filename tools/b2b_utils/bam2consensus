@@ -1,0 +1,710 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use 5.012;
+
+use BioX::Seq;
+use BioX::Seq::Stream;
+use BioX::Seq::Fetch;
+use File::Temp qw/tempfile/;
+use IPC::Cmd qw/can_run/;
+use Getopt::Long;
+use List::Util qw/sum max first/;
+use Pod::Usage;
+use POSIX qw/floor ceil/;
+
+#-inputs---------------------------------------------------------------------#
+my $fn_bam;
+my $fn_ref;
+#-outputs--------------------------------------------------------------------#
+my $fn_table;
+my $fn_consensus;
+my $fn_bedgraph;
+#-knobs----------------------------------------------------------------------#
+my $min_qual       = 10;
+my $min_depth      = 3;
+my $trim_fraction  = 0.2;
+my $sliding_window = 30;
+my $bg_bin_figs    = 0;
+my $verbose        = 0;
+
+my $PROGRAM = 'bam2consensus';
+my $VERSION = 0.004;
+
+GetOptions(
+
+    #-inputs-----------------------------------------------------------------#
+    'bam=s'         => \$fn_bam,
+    'ref=s'         => \$fn_ref,
+    #-outputs----------------------------------------------------------------#
+    'table=s'       => \$fn_table,
+    'consensus=s'   => \$fn_consensus,
+    'bedgraph=s'    => \$fn_bedgraph,
+    #-knobs------------------------------------------------------------------#
+    'min_qual=i'    => \$min_qual,
+    'min_depth=i'   => \$min_depth,
+    'trim=f'        => \$trim_fraction,
+    'window=i'      => \$sliding_window,
+    'bg_bin_figs=i' => \$bg_bin_figs,
+    'verbose'       => \$verbose,
+    'help'          => sub{ pod2usage(-verbose => 2); },
+    'version'       => sub{ print "This is $PROGRAM v$VERSION\n";exit; },
+
+) or pod2usage( -verbose => 1);
+
+# check for recent version of samtools
+my $SAMTOOLS = can_run('samtools')
+    // die "Samtools is required but not found\n";
+my $v_string = `$SAMTOOLS --version`;
+if ($v_string =~ /^samtools (\d+)\.(\d+)/m) {
+    die "Requires samtools >= 1.3.0\n" if ($1 < 1 || $2 < 3);
+} else {
+    die "Error parsing samtools version string\n";
+}
+
+# check for mafft
+my $MAFFT = can_run('mafft')
+    // die "MAFFT is required but not found\n";
+
+
+# misc param checking
+die "Error: must specify at least one output target" if (! (
+       defined $fn_table
+    || defined $fn_consensus
+    || defined $fn_bedgraph
+));
+die "Error: missing reference parameter"
+    if (! defined $fn_ref);
+die "Error reading reference"
+    if (! -r $fn_ref);
+
+
+# globals
+my @errors;
+my @lines = () if (defined $fn_table);
+
+my %iupac = (
+    A    => 'A',
+    C    => 'C',
+    G    => 'G',
+    T    => 'T',
+    AG   => 'R',
+    CT   => 'Y',
+    CG   => 'S',
+    AT   => 'W',
+    GT   => 'K',
+    AC   => 'M',
+    CGT  => 'B',
+    AGT  => 'D',
+    ACT  => 'H',
+    ACG  => 'V',
+    ACGT => 'N',
+);
+
+my @consensi;
+my $bg = '';
+
+my @curr_lines;
+my $last_chr;
+
+my $last_depth = undef;
+my $last_loc   = 0;
+my $bg_start   = 0;
+my $bg_loc     = 0;
+
+
+# initialize random-access sequence collection
+my $seqs = BioX::Seq::Fetch->new($fn_ref) or die "Error loading reference";
+
+
+# pipe from samtools mpileup command
+# (note: this is much faster in testing than using Perl bindings, e.g.
+# Bio::DB::HTS or the like)
+
+$fn_bam //= '-'; # use stdin if BAM file not given
+ 
+open my $fh, '-|', $SAMTOOLS,
+    'mpileup',
+    '-d' => 1000000,
+    '-B',
+    '-f' => $fn_ref,
+    $fn_bam ;
+    
+
+
+LINE:
+while (my $line = <$fh>) {
+
+    chomp $line;
+    my ($chr, @other) = split "\t", $line;
+    $last_chr //= $chr;
+
+    if ($chr ne $last_chr) {
+        process(\@curr_lines);
+        @curr_lines = ();
+        $last_chr = $chr;
+    }
+
+    push @curr_lines, $line;
+}
+
+process(\@curr_lines); # don't forget last call
+
+# output bedgraph if asked
+if (defined $fn_bedgraph) {
+    open my $fh_bedgraph, '>', $fn_bedgraph;
+    print {$fh_bedgraph}
+        "track type=bedGraph name=read_coverage maxHeightPixels=1000:80:20\n";
+    print {$fh_bedgraph} $bg;
+    close $fh_bedgraph;
+
+}
+
+# output fasta if asked
+if (defined $fn_consensus) {
+
+    open my $out, '>', $fn_consensus;
+    print {$out} $_->as_fasta for (@consensi);
+    close $out;
+
+}
+
+# build and process table if asked
+if (defined $fn_table) {
+
+    # calculate sliding errors
+    my @avg_errors;
+    my $l = scalar(@errors);
+    $sliding_window = $l if ($l < $sliding_window);
+    my $left  = floor(($sliding_window-1)/2);
+    my $right = ceil(($sliding_window-1)/2);
+    my $lower = $left;
+    my $upper = $l - $right;
+    for my $i (0..$#errors) {
+        my @pool;
+        if ($i < $lower) {
+            @pool = (@errors[0..$i-1] ,@errors[$i+1..$sliding_window-1]);
+        }
+        elsif ($i >= $upper) {
+            @pool = (@errors[$l-$sliding_window..$i-1], @errors[$i+1..$l-1]);
+        }
+        else {
+            @pool = (@errors[$i-$left..$i-1], @errors[$i+1..$i+$right]);
+        }
+        die "bad pool size @pool at $i" if (scalar(@pool)+1 != $sliding_window);
+
+        # calc trimmed mean
+        @pool = sort {$a <=> $b} @pool;
+        my $l = @pool;
+        my @trimmed
+            = @pool[ int($l*$trim_fraction), int($l*(1-$trim_fraction))+0.5 ];
+        my $tm = scalar(@trimmed) > 0 ? sum(@trimmed)/scalar(@trimmed) : 'NA';
+        push @avg_errors, $tm;
+    }
+
+    open my $fh_table, '>', $fn_table;
+
+    # print table header
+    print {$fh_table} join( "\t", (
+        'id',
+        'loc',
+        'ref',
+        'called',
+        'total_depth',
+        'counted_depth',
+        'mm_rate',
+        'A_count',
+        'T_count',
+        'G_count',
+        'C_count',
+        'N_count',
+        'gap_count',
+        'A_freq',
+        'T_freq',
+        'G_freq',
+        'C_freq',
+        'N_freq',
+        'gap_freq',
+        'A_sb',
+        'T_sb',
+        'G_sb',
+        'C_sb',
+        'bgnd_err',
+        'insertions'
+    ) ) . "\n";
+
+    my $iter = 0;
+    POS:
+    for (0..$#lines) {
+        my @parts = @{ $lines[$_] };
+        @parts[23] = sprintf '%.3f', $avg_errors[$_];
+        print {$fh_table} join( "\t",@parts), "\n";
+    }
+    close $fh_table;
+}
+
+sub process {
+
+    my $ln_ref = shift;
+
+    my $last_chr;
+    $last_depth = undef;
+    $last_loc = 0;
+    $bg_start = 0;
+    $bg_loc = 0;
+
+    LINE:
+    for my $line (@$ln_ref) {
+        chomp $line;
+        my @parts = split "\t", $line;
+        my $chr         = $parts[0];
+        my $loc         = $parts[1];
+        my $ref         = uc $parts[2];
+        my $depth       = $parts[3];
+        my $read_string = $parts[4];
+        my $qual_string = $parts[5];
+
+        # check that chr hasn't changed (don't supported multiple refs)
+        $last_chr   = $last_chr   // $chr;
+        if ($chr ne $last_chr) {
+            #process current, start new
+        }
+
+        # simulate missing rows
+        my $t = $last_loc + 1;
+        while ($t < $loc) {
+            handle_entry(
+                $chr,
+                $t,
+                $seqs->fetch_seq($chr, $t, $t),
+                #substr($ref_seq, $t-1, 1),
+                0,
+                '',
+                '',
+            );
+            ++$t;
+        }
+
+        # send entry for handling
+        handle_entry(
+            $chr,
+            $loc,
+            $ref,
+            $depth,
+            $read_string,
+            $qual_string,
+        );
+        
+        $last_loc = $loc;
+
+    }
+
+    # simulate missing rows at end
+    my $t = $last_loc + 1;
+    my $l = $seqs->length($last_chr);
+    while ($t <= $l) {
+        handle_entry(
+            $last_chr,
+            $t,
+            $seqs->fetch_seq($last_chr, $t, $t),
+            #substr($ref_seq, $t-1, 1),
+            0,
+            '',
+            '',
+        );
+        ++$t;
+    }
+
+    if (defined $fn_bedgraph) {
+
+        $bg .= join("\t", $last_chr, $bg_start, $bg_loc, $last_depth) . "\n";
+    }
+
+}
+
+
+sub handle_entry {
+
+    my ($chr, $loc, $ref, $depth, $read_string, $qual_string) = @_;
+
+    my $called = '';
+
+    # handle zero-depth positions separately
+    if ($depth < 1) {
+        $called = 'N';
+        print "Missing coverage at $chr pos $loc\n" if ($verbose);
+        if (defined $fn_table) {
+            push @lines, [
+                $chr,
+                $loc,
+                $ref,
+                'N',
+                (0) x 19,
+                undef,
+                '',
+            ];
+        }
+        push @errors, 0;
+    }
+
+    # everything else
+    else {
+
+        # handle insertions
+        my %inserts;
+        my $insert_count = 0;
+        while ($read_string =~ /\+(\d+)((??{"[ATGCNatgcnRYSWKMBDHVryswkmbdhv-]{$^N}"}))/g) {
+            $inserts{$2} += 1;
+            ++$insert_count;
+        }
+
+        # ...and strip extra characters
+        $read_string =~ s/\^.//g;
+        $read_string =~ s/[\+\-](\d+)(??{"[ATGCNatgcnRYSWKMBDHVryswkmbdhv-]{$^N}"})//g;
+        $read_string =~ s/[^\.\,\w\*]//g;
+    
+        # simple parse check
+        my $l1 = length($read_string);
+        my $l2 = length($qual_string);
+        die "read/qual mismatch ($l1 v $l2)" if ($l1 != $l2);
+
+        die "unexpected char at $chr pos $loc\n"
+            if ($read_string =~ /[^.,ATGCNatgcn*]/);
+
+        my $lc = lc $ref;
+        $read_string =~ s/\./$ref/g;
+        $read_string =~ s/\,/$lc/g;
+        $read_string =~ s/n/N/g;
+
+        # split into arrays
+        my %counts = map {$_ => 0} qw/A T G C N a t g c */;
+        my %cons_counts = map {$_ => 0} qw/A T G C N a t g c */;
+        my @chars  = split '', $read_string;
+        my @quals  = map {ord($_) - 33} split('', $qual_string);
+
+        READ:
+        for my $i (0..$#chars) {
+            ++$cons_counts{ uc($chars[$i]) };
+            ++$counts{ $chars[$i] } if ($quals[$i] >= $min_qual);
+        }
+
+        # calculate strand bias and collapse counts
+        my %sb;
+        for my $b (qw/A T G C/) {
+            my $n = $counts{$b} + $counts{lc($b)}; 
+            $sb{$b} = $n > 0
+                ? ($n-1)/$n*(2*max($counts{$b}/$n, ($n-$counts{$b})/$n)-1)
+                : 0;
+            $counts{$b} += $counts{lc($b)};
+            delete $counts{lc($b)};
+        }
+
+        $counts{$ref} = $counts{$ref} // 0; # some IUPAC codes not defined above
+        $cons_counts{$ref} = $cons_counts{$ref} // 0; # some IUPAC codes not defined above
+        my $mismatches    = sum map {$counts{$_}} grep {$_ ne $ref} keys %counts;
+        my $counted_depth = $counts{$ref} + $mismatches;
+        my $cons_depth    = sum map {$cons_counts{$_}} keys %counts;
+        my $error_rate    = $counted_depth == 0
+            ? 0
+            : sprintf '%.4f', $mismatches/$counted_depth;
+        push @errors, $error_rate;
+
+        my @insert_strings = ();
+        my $consensus_insert = '';
+
+        #create case-insensitive insert hash
+        my %combined_inserts;
+        for (keys %inserts) {
+            $combined_inserts{uc($_)} += $inserts{$_};
+        }
+
+        if (scalar(keys %combined_inserts) > 0) {
+            my @sorted_inserts = sort {
+                $combined_inserts{$b} <=> $combined_inserts{$a}
+             || $a cmp $b
+            } keys %combined_inserts;
+            for (@sorted_inserts) {
+                my $f_count = $inserts{$_} // 0;
+                my $r_count = $inserts{lc($_)} // 0;
+                my $n = $combined_inserts{$_};
+                my $sb = sprintf '%.3f', ($n-1)/$n*max($f_count/$n, ($n-$f_count)/$n);
+                push @insert_strings, "$_($f_count,$r_count:$sb)";
+            }
+
+            # decide whether to include insert in consensus
+            if ($insert_count/$l1 > 0.5) {
+                my @realigned = realign(\%combined_inserts);
+                for my $i (0..$#realigned) {
+                    my @b = sort {
+                        $realigned[$i]->{$b} <=> $realigned[$i]->{$a}
+                    } keys %{ $realigned[$i] };
+                    if ($realigned[$i]->{$b[0]}/$l1 > 0.5) {
+                        $consensus_insert .= uc $b[0];
+                    }
+                }
+            }
+                    
+        }
+        if ($cons_depth < $min_depth) {
+            $called = 'N';
+        }
+        else {
+            my @sorted
+                = sort {$cons_counts{$b} <=> $cons_counts{$a}} keys %cons_counts;
+
+            # get all top hits that aren't gaps
+            my @equal_hits = grep {
+                $cons_counts{$_} eq $cons_counts{$sorted[0]} && $_ ne '*'
+            } @sorted;
+            
+            if (scalar(@equal_hits)) {
+                my $tag = join('',sort {$a cmp $b} @equal_hits);
+                die "bad tag $tag" if (! defined $iupac{$tag});
+                $called = $iupac{$tag};
+            }
+        }
+        $called .= $consensus_insert;
+
+        print "consensus/reference difference at $chr pos $loc (ref: $ref cons: $called)\n"
+            if ($verbose && $called ne $ref);
+
+        if (defined $fn_table) {
+            push @lines, [
+                $chr,
+                $loc,
+                $ref,
+                $called eq '' ? '-' : $called,
+                $depth,
+                $counted_depth,
+                sprintf('%.3f',$error_rate),
+                $counts{A},
+                $counts{T},
+                $counts{G},
+                $counts{C},
+                $counts{N},
+                $counts{'*'},
+                sprintf('%.3f',$counts{A}/$counted_depth),
+                sprintf('%.3f',$counts{T}/$counted_depth),
+                sprintf('%.3f',$counts{G}/$counted_depth),
+                sprintf('%.3f',$counts{C}/$counted_depth),
+                sprintf('%.3f',$counts{N}/$counted_depth),
+                sprintf('%.3f',$counts{'*'}/$counted_depth),
+                sprintf('%.3f',$sb{A}),
+                sprintf('%.3f',$sb{T}),
+                sprintf('%.3f',$sb{G}),
+                sprintf('%.3f',$sb{C}),
+                undef,
+                join(':',@insert_strings)
+            ];
+        }
+    }
+
+    my $consensus = first {$_->id eq $chr} @consensi;
+    if (! defined $consensus) {
+        $consensus = BioX::Seq->new('',$chr);
+        push @consensi, $consensus;
+    }
+    $consensus->seq .= $called;
+
+    my $cons_len = length($called);
+
+    # Generate bedgraph output
+    if (defined $fn_bedgraph && $cons_len > 0) {
+
+        # bin depth if requested
+        if ($bg_bin_figs > 0) {
+            my $divisor = 10**max(0, length($depth)-$bg_bin_figs);
+            $depth = int($depth/$divisor) * $divisor;
+        }
+
+        # output on depth change
+        if (! defined $last_depth || $depth != $last_depth) {
+            $bg .= join("\t",$last_chr, $bg_start, $bg_loc, $last_depth) . "\n"
+                if (defined $last_depth);
+            $last_depth = $depth;
+            $bg_start = $bg_loc;
+        }
+
+        $bg_loc += $cons_len;
+
+    }
+
+}
+
+
+sub realign {
+
+    # calculate a local realignment at indel using MAFFT
+    # TODO: reimplement using native code
+
+    my ($hash) = @_;
+
+    my @seqs = keys %{ $hash };
+    my @weights = map {$hash->{$_}} @seqs;
+    my @scores;
+    if (scalar(@seqs) > 1) {
+        my ($fh, $fn) = tempfile;
+        for (0..$#seqs) {
+            my $n = $_ + 1;
+            print {$fh} ">$n\n$seqs[$_]\n";
+        }
+        close $fh;
+        open my $stream, '-|', $MAFFT,
+            '--auto',
+            '--quiet',
+            '--op'  => 0,
+            '--lop' => 0,
+            $fn;
+        my $p = BioX::Seq::Stream->new($stream);
+        while (my $seq = $p->next_seq) {
+            my $w = shift @weights;
+            for (0..length($seq)-1) {
+                my $base = substr $seq, $_, 1;
+                next if ($base eq '-');
+                $scores[$_] = {} if (! defined $scores[$_]);
+                $scores[$_]->{$base} += $w;
+            }
+        }
+    }
+    else {
+        my $seq = $seqs[0];
+        my $w   = $weights[0];
+        for (0..length($seq)-1) {
+            my $base = substr $seq, $_, 1;
+            next if ($base eq '-');
+            $scores[$_] = {} if (! defined $scores[$_]);
+            $scores[$_]->{$base} += $w;
+        }
+    }
+    return @scores;
+        
+}
+
+
+__END__
+
+=head1 NAME
+
+bam2consensus - consensus calling (etc) from BAM alignment
+
+=head1 SYNOPSIS
+
+bam2consensus --bam <in.bam> --ref <in.fasta> [options] --consensus <out.fasta>
+
+=head1 DESCRIPTION
+
+Re-calls a consensus sequence based on a BAM alignment to reference, with
+various knobs and optional output formats
+
+=head1 PREREQUISITES
+
+Requires the following non-core Perl libraries:
+
+=over 1
+
+=item * BioX::Seq
+
+=back
+
+as well as the following binaries:
+
+=over 1
+
+=item * samtools (>= 1.3.1)
+
+=item * mafft
+
+=back
+
+=head1 OPTIONS
+
+=head2 Input (required)
+
+=over 4
+
+=item B<--bam> I<filename>
+
+Path to input BAM alignments
+
+=item B<--ref> I<filename>
+
+Path to reference sequence used to generate BAM alignments
+
+=back
+
+=head2 Output (at least one is required, can specify more than one)
+
+=over 4
+
+=item B<--consensus>
+
+Path to write consensus sequence to (as FASTA)
+
+=item B<--bedgraph>
+
+Path to write coverage file to (as bedgraph)
+
+=item B<--table>
+
+Path to write coverage file to (as tab-separated table)
+
+=back
+
+=head2 Configuration 
+
+=over 4
+
+=item B<--min_qual>
+
+Minimum quality for a base to be considered in consensus calling. Default: 10.
+
+=item B<--min_depth>
+
+Minimum read depth for consensus to be called (otherwise called as "N").  Default: 3.
+
+=item B<--trim>
+
+Fraction to trim from each end when calculating trimmed mean of error window.
+Default: 0.2.
+
+=item B<--window>
+
+Size of sliding window used to calculate local error rates. Default: 30.
+
+=item B<--bg_bin_figs> <integer>
+
+If greater than zero, the number of significant figures used to bin depths in
+bedgraph output. If zero, no binning is applied. This option is useful to
+reduce the size of bedgraph output by binning similar depth values when high
+resolution is not important. Default: 0 (disabled).
+
+=back
+
+=head1 CAVEATS AND BUGS
+
+Please submit bug reports to the issue tracker in the distribution repository.
+
+=head1 AUTHOR
+
+Jeremy Volkening (jdv@base2bio.com)
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2014-17 Jeremy Volkening
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=cut
+

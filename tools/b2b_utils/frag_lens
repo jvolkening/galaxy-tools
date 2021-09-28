@@ -1,0 +1,197 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use 5.012;
+
+use Cwd qw/abs_path/;
+use File::Temp qw/tempdir tempfile/;
+use IPC::Cmd qw/can_run/;
+use List::Util qw/sum/;
+use Getopt::Long;
+use Pod::Usage;
+
+my @good_codes = ( 0x0002, 0x0040 );
+my @bad_codes  = ( 0x0004, 0x0100, 0x0800 );
+
+#-inputs---------------------------------------------------------------------#
+my $fasta;
+my $forward;
+my $reverse;
+my $sam;
+#-knobs----------------------------------------------------------------------#
+my $threads = 1;
+my $max_align = 10000;
+
+my $PROGRAM = 'frag_lens';
+my $VERSION = 0.001;
+
+GetOptions(
+    #-inputs-----------------------------------------------------------------#
+    'sam=s'     => \$sam,
+    'forward=s' => \$forward,
+    'reverse=s' => \$reverse,
+    'ref=s'     => \$fasta,
+    #-knobs------------------------------------------------------------------#
+    'threads=i' => \$threads,
+    'max_aln=i' => \$max_align,
+    'help'      => sub{ pod2usage(-verbose => 2); },
+    'version'   => sub{ say "This is $PROGRAM v$VERSION";exit; },
+
+) or pod2usage( -verbose => 1);
+
+my $fh_sam;
+my $tmp_fasta;
+
+if (defined $sam) {
+    open $fh_sam, '<', $sam or die "failed to open SAM\n";
+}
+
+else {
+
+    my $BWA = can_run('bwa')
+        // die "BWA is required but not found\n";
+
+    my ($tmp_dir) = tempdir( CLEANUP => 1);
+
+    die "specify forward and reverse read files and reference\n"
+        if (! defined $forward || ! defined $reverse || ! defined $fasta); 
+
+    $fasta = abs_path($fasta);
+    
+    my $res = system(
+        'ln',
+        '-s',
+        $fasta,
+        "$tmp_dir/tmp.fasta"
+    );
+    die "link failed" if ($res);
+    $res = system(
+        $BWA,
+        'index',
+        "$tmp_dir/tmp.fasta"
+    );
+    die "index failed" if ($res);
+    open $fh_sam, '-|', $BWA,
+        'mem',
+        '-t' => $threads,
+        '-v' => 1,
+        "$tmp_dir/tmp.fasta",
+        $forward,
+        $reverse
+    ;
+}
+
+my $c = 0;
+while (my $line = <$fh_sam>) {
+    next if ($line =~ /^\@/);
+    chomp $line;
+    my @parts = split "\t", $line;
+    my $flags = $parts[1];
+    my $sum1 = sum map {$_ & $flags ? 1 : 0} @good_codes;
+    my $sum2 = sum map {$_ & $flags ? 1 : 0} @bad_codes;
+    if ($sum1 == scalar @good_codes && $sum2 == 0) {
+        say abs($parts[8]);
+        last if (++$c >= $max_align);
+    }
+}
+close $fh_sam;
+
+__END__
+
+=head1 NAME
+
+frag_lens - Calculate paired end fragment lengths from read alignment
+
+=head1 SYNOPSIS
+
+frag_lens [--sam <in.sam>] OR [--ref <cons.fa> --forward <R1.fq> --reverse <R2.fq>] [options] > frag_lens.txt
+
+=head1 DESCRIPTION
+
+Calculates library fragment lengths based on paired-end read alignment.
+Takes as input either a preprepared SAM alignment or a reference and read
+files from which it produces an alignment. Outputs calculated fragment
+lengths, one per line.
+
+=head1 PREREQUISITES
+
+Requires the following binaries:
+
+=over 1
+
+=item * bwa
+
+=back
+
+=head1 OPTIONS
+
+=head2 Input option one
+
+=over 4
+
+=item B<--sam> I<filename>
+
+Path to input SAM alignment.
+
+=back
+
+=head2 Input option two
+
+=over 4
+
+=item B<--ref> I<filename>
+
+Path to reference sequence (e.g. assembly)
+
+=item B<--forward> I<filename>
+
+Forward reads in FASTQ format
+
+=item B<--reverse> I<filename>
+
+Reverse reads in FASTQ format
+
+=back
+
+=head2 Configuration 
+
+=over 4
+
+=item B<--max_align>
+
+Maximum number of alignment records to read as input. Used to limit run times.
+
+=item B<--threads>
+
+Number of threads to use for alignment (ignored if --sam is given)
+
+=back
+
+=head1 CAVEATS AND BUGS
+
+Please submit bug reports to the issue tracker in the distribution repository.
+
+=head1 AUTHOR
+
+Jeremy Volkening (jdv@base2bio.com)
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2014-19 Jeremy Volkening
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=cut
+

@@ -12,13 +12,12 @@
         <!-- ncurses needs to be explicitly pulled from conda-forge for samtools to work -->
         <requirement type="package" version="6.1">ncurses</requirement>
         <requirement type="package" version="1.9">samtools</requirement>
-        <requirement type="package" version="0.006007">perl-biox-seq</requirement>
-        <requirement type="package" version="1.23">perl-file-which</requirement>
+        <requirement type="package" version="0.008002">perl-biox-seq</requirement>
     </requirements>
 
     <!-- ***************************************************************** -->
 
-    <version_command>bam2consensus --version | perl -wnE'print "$1\n" for /bam2consensus v(.+)/g'</version_command>
+    <version_command>perl $__tool_directory__/bam2consensus --version | perl -wnE'print "$1\n" for /bam2consensus v(.+)/g'</version_command>
 
     <!-- ***************************************************************** -->
 
@@ -30,7 +29,7 @@
     samtools faidx ref.tmp;
     samtools index in.bam;
 
-    bam2consensus
+    perl $__tool_directory__/bam2consensus
         --ref ref.tmp
         --bam in.bam
         --min_qual $min_qual
