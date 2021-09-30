@@ -1,0 +1,114 @@
+<tool id="krakentools_kreport2krona" name="Kraken To Krona" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" profile="17.09">
+    <description>Convert a Kraken/Kraken2 report to a Krona-compatible text file</description>
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+    <expand macro="requirements" />
+    <expand macro="stdio" />
+    <version_command>echo -n @TOOL_VERSION@</version_command>
+
+    <command detect_errors="exit_code"><![CDATA[
+
+    kreport2krona.py
+        --report '$report'
+        -o '$output'
+        $intermediate_ranks
+    
+    ]]></command>
+
+    <inputs>
+        <param name="report" argument="--report" format="tabular" type="data" label="Report" help="Report (classification) file from Kraken/Kraken2" />
+        <param name="intermediate_ranks" argument="--intermediate-ranks" type="boolean" value="False" truevalue="--intermediate-ranks" falsevalue="--no-intermediate-ranks" label="Intermediate ranks" help="Include non-standard taxonomic levels" />
+
+    </inputs>
+
+    <outputs>
+        <data name="output" format="tabular" label="${tool.name} on ${on_string}: table" />
+    </outputs>
+
+    <tests>
+
+        <!-- test Kraken2 input, no intermediate ranks -->
+        <test>
+            <param name="report" value="kraken2.report" ftype="tabular"/>
+            <param name="intermediate_ranks" value="False"/>
+            <output name="output" file="krona.k2.noint.tsv"/>
+        </test>
+        <!-- test KrakenUniq input, intermediate ranks -->
+        <test>
+            <param name="report" value="kraken2.report" ftype="tabular"/>
+            <param name="intermediate_ranks" value="True"/>
+            <output name="output" file="krona.k2.int.tsv"/>
+        </test>
+
+    </tests>
+
+    <help><![CDATA[
+
+.. class:: infomark
+
+**What it does**
+
+-------------------
+
+After running Kraken, Kraken2, or KrakenUniq, users may use the
+`kreport2krona.py` program to convert the report file to a tabular format
+suitable for input into Krona.
+
+**Example usage**
+
+-------------------
+
+.. code-block:: bash
+
+   kraken2 --db KRAKEN2DB --threads THREADNUM --report MYSAMPLE.KREPORT \
+       --paired SAMPLE_1.FASTA SAMPLE_2.FASTA > MYSAMPLE.KRAKEN2
+   kreport2krona.py --report MYSAMPLE.KREPORT --output MYSAMPLE.krona
+   ktImportText MYSAMPLE.krona -o MYSAMPLE.krona.html
+
+-------------------
+
+**Command-line arguments**
+
+-------------------
+
+The following command-line usage corresponds with the Galaxy wrapper
+parameters::
+
+    usage: kreport2krona.py [-h] -r R_FILE -o O_FILE [--intermediate-ranks] [--no-intermediate-ranks]
+
+    optional arguments:
+        -h, --help            show this help message and exit
+        -r R_FILE, --report-file R_FILE, --report R_FILE
+                                Input kraken report file for converting
+        -o O_FILE, --output O_FILE
+                                Output krona-report file name
+        --intermediate-ranks  Include non-traditional taxonomic ranks in output
+        --no-intermediate-ranks
+                                Do not include non-traditional taxonomic ranks in output [default: no intermediate ranks]
+
+--------------------
+
+**More Information**
+
+--------------------
+
+Author:  Jennifer Lu
+
+See the `online documentation`_
+
+.. _`online documentation`: https://github.com/jenniferlu717/KrakenTools#kreport2kronapy
+
+--------------------
+
+**Galaxy Wrapper Development**
+
+--------------------
+
+Author: Jeremy Volkening
+
+    ]]></help>
+
+    <expand macro="citations" />
+
+</tool>

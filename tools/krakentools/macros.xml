@@ -17,5 +17,19 @@
         <regex match="Exception:"/>
         </stdio>
     </xml>
+    <xml name="citations">
+        <citations>
+            <citation type="bibtex">
+            @misc{Lu2021,
+            author = {Lu, Jennifer},
+            year = {2021},
+            title = {KrakenTools},
+            publisher = {GitHub},
+            journal = {GitHub repository},
+            url = {https://github.com/jenniferlu717/KrakenTools},
+            }
+            </citation>
+        </citations>
+    </xml>
 
 </macros>

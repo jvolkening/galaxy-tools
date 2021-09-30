@@ -277,7 +277,6 @@ Author: Jeremy Volkening
 
     ]]></help>
 
-    <citations>
-    </citations>
+    <expand macro="citations" />
 
 </tool>
