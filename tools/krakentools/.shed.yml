@@ -1,5 +1,5 @@
 name: krakentools
-owner: jdv
+owner: jvolkening
 description: Utilities for downstream analysis of Kraken/Kraken2/KrakenUniq/Bracken output
 homepage_url: https://github.com/jenniferlu717/KrakenTools
 long_description: |
