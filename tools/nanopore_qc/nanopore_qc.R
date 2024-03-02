@@ -1,34 +1,30 @@
 #!/usr/bin/Rscript
 
+# NanoporeQC was forked from:
 # MinionQC version 1.0
 # Copyright (C) 2017 Robert Lanfear
+# 
+# Modifications (c) 2018-2024 Jeremy Volkening
 #
-# This program is free software: you can redistribute it and/or modify it under
-# the terms of the GNU General Public License as published by the Free Software
-# Foundation, either version 3 of the License, or (at your option) any later
-# version.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-# details. You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+# Released under the MIT license (see LICENSE)
 
 # supress warnings
 options(warn=-1)
 
-library(ggplot2)
-library(plyr)
-library(reshape2)
-library(readr)
-library(yaml)
-suppressMessages(library(scales))
-#library(parallel)
-library(futile.logger)
-suppressPackageStartupMessages(library(data.table))
-suppressPackageStartupMessages(library(optparse))
-
+libs <- c(
+    'ggplot2',
+    'tidyr',
+    'dplyr',
+    'readr',
+    'yaml',
+    'scales',
+    'futile.logger',
+    'data.table',
+    'optparse'
+)
+for (l in libs) {
+    library(l, character.only = T, quietly = T)
+}
 
 # option parsing #
 
@@ -75,26 +71,25 @@ q           = opt$q
 q_title = paste("Q>=", q, sep="")
 
 
-# build the map for R9.5
-p1 = data.frame(channel=33:64, row=rep(1:4, each=8), col=rep(1:8, 4))
-p2 = data.frame(channel=481:512, row=rep(5:8, each=8), col=rep(1:8, 4))
-p3 = data.frame(channel=417:448, row=rep(9:12, each=8), col=rep(1:8, 4))
-p4 = data.frame(channel=353:384, row=rep(13:16, each=8), col=rep(1:8, 4))
-p5 = data.frame(channel=289:320, row=rep(17:20, each=8), col=rep(1:8, 4))
-p6 = data.frame(channel=225:256, row=rep(21:24, each=8), col=rep(1:8, 4))
-p7 = data.frame(channel=161:192, row=rep(25:28, each=8), col=rep(1:8, 4))
-p8 = data.frame(channel=97:128, row=rep(29:32, each=8), col=rep(1:8, 4))
-
-q1 = data.frame(channel=1:32, row=rep(1:4, each=8), col=rep(16:9, 4))
-q2 = data.frame(channel=449:480, row=rep(5:8, each=8), col=rep(16:9, 4))
-q3 = data.frame(channel=385:416, row=rep(9:12, each=8), col=rep(16:9, 4))
-q4 = data.frame(channel=321:352, row=rep(13:16, each=8), col=rep(16:9, 4))
-q5 = data.frame(channel=257:288, row=rep(17:20, each=8), col=rep(16:9, 4))
-q6 = data.frame(channel=193:224, row=rep(21:24, each=8), col=rep(16:9, 4))
-q7 = data.frame(channel=129:160, row=rep(25:28, each=8), col=rep(16:9, 4))
-q8 = data.frame(channel=65:96, row=rep(29:32, each=8), col=rep(16:9, 4))
-
-map = rbind(p1, p2, p3, p4, p5, p6, p7, p8, q1, q2, q3, q4, q5, q6, q7, q8)
+# build the map for R9.5, which has this unusual non-sequential numbering layout
+map <- rbind(
+    data.frame( channel=33:64,   row=rep(1:4,   each=8), col=rep(1:8, 4)  ),
+    data.frame( channel=481:512, row=rep(5:8,   each=8), col=rep(1:8, 4)  ),
+    data.frame( channel=417:448, row=rep(9:12,  each=8), col=rep(1:8, 4)  ),
+    data.frame( channel=353:384, row=rep(13:16, each=8), col=rep(1:8, 4)  ),
+    data.frame( channel=289:320, row=rep(17:20, each=8), col=rep(1:8, 4)  ),
+    data.frame( channel=225:256, row=rep(21:24, each=8), col=rep(1:8, 4)  ),
+    data.frame( channel=161:192, row=rep(25:28, each=8), col=rep(1:8, 4)  ),
+    data.frame( channel=97:128,  row=rep(29:32, each=8), col=rep(1:8, 4)  ),
+    data.frame( channel=1:32,    row=rep(1:4,   each=8), col=rep(16:9, 4) ),
+    data.frame( channel=449:480, row=rep(5:8,   each=8), col=rep(16:9, 4) ),
+    data.frame( channel=385:416, row=rep(9:12,  each=8), col=rep(16:9, 4) ),
+    data.frame( channel=321:352, row=rep(13:16, each=8), col=rep(16:9, 4) ),
+    data.frame( channel=257:288, row=rep(17:20, each=8), col=rep(16:9, 4) ),
+    data.frame( channel=193:224, row=rep(21:24, each=8), col=rep(16:9, 4) ),
+    data.frame( channel=129:160, row=rep(25:28, each=8), col=rep(16:9, 4) ),
+    data.frame( channel=65:96,   row=rep(29:32, each=8), col=rep(16:9, 4) )
+)
 
 add_cols <- function(d, min.q){
     # take a sequencing sumamry file (d), and a minimum Q value you are interested in (min.q)
@@ -131,14 +126,19 @@ load_summary <- function(filepath, min.q){
     # min.q is a vector of length 2 defining 2 levels of min.q to have
     # by default the lowest value is -Inf, i.e. includes all reads. The 
     # other value in min.q is set by the user at the command line
-    d = read_tsv(filepath, col_types = cols_only(channel = 'i', 
-                                                passes_filtering = 'c',
-                                                num_events_template = 'i', 
-                                                sequence_length_template = 'i', 
-                                                mean_qscore_template = 'n',
-                                                sequence_length_2d = 'i',
-                                                mean_qscore_2d = 'n',
-                                                start_time = 'n'))
+    d = read_tsv(
+        filepath,
+        col_types = cols_only(
+            channel = 'i', 
+            passes_filtering = 'c',
+            num_events_template = 'i', 
+            sequence_length_template = 'i', 
+            mean_qscore_template = 'n',
+            sequence_length_2d = 'i',
+            mean_qscore_2d = 'n',
+            start_time = 'n'
+        )
+    )
     
     if("sequence_length_2d" %in% names(d)){
         # it's a 1D2 or 2D run
@@ -307,13 +307,15 @@ channel.summary <- function(d){
     # calculate summaries of what happened in each of the channels 
     # of a flowcell
     
-    a = ddply(d, .(channel), 
-              summarize, 
-              total.bases = sum(sequence_length_template), 
-              total.reads = sum(which(sequence_length_template>=0)), 
-              mean.read.length = mean(sequence_length_template), 
-              median.read.length = median(sequence_length_template))
-    b = melt(a, id.vars = c("channel"))
+    a <- d %>% group_by(channel) %>% summarize(
+        total.bases = sum(sequence_length_template), 
+        total.reads = sum(which(sequence_length_template>=0)), 
+        mean.read.length = mean(sequence_length_template), 
+        median.read.length = median(sequence_length_template)
+    )
+        
+    #b = melt(a, id.vars = c("channel"))
+    b = gather(a, key, -channel)
     return(b)    
 }
 

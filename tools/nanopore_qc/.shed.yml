@@ -1,12 +1,13 @@
 name: nanopore_qc
 owner: jdv
 description: NanoporeQC - QC reporting for nanopore data
-long_description: |
-    NanoporeQC produces a QC report for nanopore sequencing data. It utilizes
-    the summary table produced by Albacore or Guppy, which saves time by avoiding the
-    need to re-parse the FAST5 read data. NanoporeQC was originally forked
-    from the minion_qc codebase (https://github.com/roblanf/minion_qc).
+long_description: >
+    NanoporeQC, a fork of MinionQC (https://github.com/roblanf/minion_qc),
+    produces a QC report for nanopore sequencing data. It utilizes the summary
+    table produced by Albacore, Guppy, or Dorado, which saves time by avoiding the
+    need to re-parse the FAST5 read data. 
 remote_repository_url: https://github.com/jvolkening/galaxy-tools/tree/master/tools/nanopore_qc
 type: unrestricted
 categories:
 - Sequence Analysis
+- Nanopore
