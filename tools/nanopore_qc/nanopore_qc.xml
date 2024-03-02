@@ -99,6 +99,18 @@
             </output>
         </test>
 
+        <!-- Dorado output -->
+        <test>
+            <param name="input" value="dorado.txt.small" ftype="tabular" />
+            <param name="q_cutoff" value="6" />
+            <output name="html_file">
+                <assert_contents>
+                    <has_text_matching expression="&lt;td&gt;Total Reads&lt;/td&gt;\s*&lt;td&gt;31&lt;/td&gt;" />
+                    <has_text_matching expression="&lt;td&gt;Total Reads&lt;/td&gt;\s*&lt;td&gt;29&lt;/td&gt;" />
+                </assert_contents>
+            </output>
+        </test>
+
     </tests>
     <help>
 <![CDATA[
@@ -107,9 +119,11 @@
     need to re-parse the FAST5 read data. `NanoporeQC` was originally forked
     from the `minion_qc` codebase (https://github.com/roblanf/minion_qc).
 
-    The only tuneable parameter is the quality value cutoff. Two summaries are
-    produced for each table and plot -- one for all reads (with length >= 0)
-    and one for reads with a quality value greater than the cutoff.
+    There are only two tuneable parameters. The 'quality cutoff' sets a
+    threshold for plotting: two summaries are produced for each table and plot
+    -- one for all reads (with length >= 0) and one for reads with a quality
+    value greater than the cutoff. 'Ignore reads failing quality filter'
+    indicates whether to include or exclude failing reads from the QC plots.
 ]]>
     </help>
     <citations>
