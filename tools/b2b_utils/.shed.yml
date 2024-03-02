@@ -1,6 +1,6 @@
 name: b2b_utils
-owner: jdv
-description: b2b_utils - bioinformatics utilities from BASE2BIO
+owner: jdvolkening
+description: b2b-utils - bioinformatics utilities from BASE2BIO
 homepage_url: https://github.com/jvolkening/b2b-utils
 long_description: |
     A varied set of utilities for genomics and sequence analysis released by BASE2BIO.
@@ -15,6 +15,6 @@ auto_tool_repositories:
   description_template: "Wrapper for B2B utility {{ tool_name }}."
 suite:
   name: "suite_b2b_utils"
-  description: "A suite of Galaxy tools wrapping several utilities from b2b_utils"
+  description: "A suite of Galaxy tools wrapping several utilities from b2b-utils"
   type: repository_suite_definition
     

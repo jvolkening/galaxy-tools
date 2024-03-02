@@ -1,23 +1,16 @@
-<tool id="b2b_bam2consensus" name="BAM to consensus" version="0.003">
+<tool id="b2b_bam2consensus" name="BAM to consensus" version="0.004">
 
     <description>Re-call consensus based on BAM mapping</description>
 
     <!-- ***************************************************************** -->
 
     <requirements>
-    <!--
-        <requirement type="package" version="0.003">b2b-utils</requirement>
-    -->
-        <requirement type="package" version="7.407">mafft</requirement>
-        <!-- ncurses needs to be explicitly pulled from conda-forge for samtools to work -->
-        <requirement type="package" version="6.1">ncurses</requirement>
-        <requirement type="package" version="1.9">samtools</requirement>
-        <requirement type="package" version="0.008002">perl-biox-seq</requirement>
+        <requirement type="package" version="0.019">b2b-utils</requirement>
     </requirements>
 
     <!-- ***************************************************************** -->
 
-    <version_command>perl $__tool_directory__/bam2consensus --version | perl -wnE'print "$1\n" for /bam2consensus v(.+)/g'</version_command>
+    <version_command>bam2consensus --version | perl -wnE'print "$1\n" for /bam2consensus v(.+)/g'</version_command>
 
     <!-- ***************************************************************** -->
 
@@ -29,7 +22,7 @@
     samtools faidx ref.tmp;
     samtools index in.bam;
 
-    perl $__tool_directory__/bam2consensus
+    bam2consensus
         --ref ref.tmp
         --bam in.bam
         --min_qual $min_qual
@@ -82,7 +75,7 @@
     <!-- ***************************************************************** -->
 
     <tests>
-        <test>
+        <test expect_num_outputs="3">
             <param name="in_bam" value="b2c.bam" ftype="bam" />
             <param name="ref_file" value="b2c.mod.fa" ftype="fasta" />
             <param name="min_qual" value="8" />

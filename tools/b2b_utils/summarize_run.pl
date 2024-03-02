@@ -31,7 +31,6 @@ GetOptions(
     'threads=i'   => \$n_threads,
 );
 
-
 my @counts;
 for ($fn_raw1, $fn_raw2, $fn_filt1, $fn_filt2) {
     open my $in, '-|', 'wc', '-l', $_;

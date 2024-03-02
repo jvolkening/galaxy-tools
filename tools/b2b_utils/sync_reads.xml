@@ -1,24 +1,23 @@
-<tool id="b2b_sync_reads" name="Sync paired reads" version="0.004">
+<tool id="b2b_sync_reads" name="Sync paired reads" version="0.005">
 
     <description>Synchronize trimmed/filtered read-pair set</description>
 
     <!-- ***************************************************************** -->
 
     <requirements>
-        <!-- <requirement type="package" version="0.003">b2b-utils</requirement> -->
-        <requirement type="package" version="0.008002">perl-biox-seq</requirement>
+        <requirement type="package" version="0.019">b2b-utils</requirement>
     </requirements>
 
     <!-- ***************************************************************** -->
 
-    <version_command>perl $__tool_directory__/sync_reads --version | perl -wnE'print "$1\n" for /sync_reads v(.+)/g'</version_command>
+    <version_command>sync_reads --version | perl -wnE'print "$1\n" for /sync_reads v(.+)/g'</version_command>
 
     <!-- ***************************************************************** -->
 
     <command detect_errors="aggressive">
     <![CDATA[
 
-    perl $__tool_directory__/sync_reads
+    sync_reads
     --fwd $input1
     --rev $input2
     --fwd_out $fwd_out
@@ -66,14 +65,14 @@
 
     <tests>
 
-        <test>
+        <test expect_num_outputs="2">
             <param name="input1" value="test_R1.fq" ftype="fastq" />
             <param name="input2" value="test_R2.fq" ftype="fastq" />
             <output name="fwd_out" file="test_R1.sync.fq" compare="diff" />
             <output name="rev_out" file="test_R2.sync.fq" compare="diff" />
         </test>
 
-        <test>
+        <test expect_num_outputs="4">
             <param name="input1" value="test_R1.fq" ftype="fastq" />
             <param name="input2" value="test_R2.fq" ftype="fastq" />
             <param name="write_singles" value="True" />

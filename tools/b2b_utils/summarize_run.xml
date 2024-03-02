@@ -9,7 +9,7 @@
         <requirement type="package" version="0.003">b2b-utils</requirement>
     -->
         <requirement type="package" version="0.7.17">bwa</requirement>
-        <requirement type="package" version="0.008002">perl-biox-seq</requirement>
+        <requirement type="package" version="0.008009">perl-biox-seq</requirement>
         <requirement type="package" version="1.23">perl-file-which</requirement>
     </requirements>
 
