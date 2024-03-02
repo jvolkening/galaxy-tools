@@ -1,5 +1,5 @@
 name: nanopore_qc
-owner: jdv
+owner: jvolkening
 description: NanoporeQC - QC reporting for nanopore data
 long_description: >
     NanoporeQC, a fork of MinionQC (https://github.com/roblanf/minion_qc),
