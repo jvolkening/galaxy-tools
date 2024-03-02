@@ -12,6 +12,7 @@
         <requirement type="package" version="1.4.3">r-futile.logger</requirement>
         <requirement type="package" version="1.14.10">r-data.table</requirement>
         <requirement type="package" version="1.7.4">r-optparse</requirement>
+        <requirement type="package" version="1.2.7">r-ragg</requirement>
         <requirement type="package" version="0.88">perl-yaml-libyaml</requirement>
     </requirements>
 
