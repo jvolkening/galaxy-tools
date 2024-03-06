@@ -1,4 +1,4 @@
-<tool id="badread" name="badread" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" python_template_version="3.5" profile="21.05">
+<tool id="badread" name="Badread" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" license="MIT" python_template_version="3.5" profile="21.05">
 
     <description>long-read simulator</description>
     <macros>
@@ -42,7 +42,7 @@
     ]]></command>
 
     <inputs>
-        <section name="io" title="Input/Output">
+        <section name="io" title="Input/Output" expanded="true">
             <param type="data"
                 argument="--reference"
                 format="fasta,fasta.gz"
@@ -55,7 +55,7 @@
                 falsevalue=""
                 label="Compress output" />
         </section>
-        <section name="sim" title="Simulation parameters">
+        <section name="sim" title="Simulation parameters" expanded="true">
             <param type="text"
                 optional="false"
                 argument="--quantity"
@@ -307,60 +307,56 @@
 **Required arguments:**
 
   --reference REFERENCE         Reference FASTA file (can be gzipped)
-
-  --quantity QUANTITY           Either an absolute value (e.g. 250M) or a relative depth (e.g. 25x)
+  --quantity QUANTITY           Either an absolute value (e.g. 250M) or a
+                                relative depth (e.g. 25x)
 
 **Simulation parameters:**
 
-  --length LENGTH               Fragment length distribution (mean and stdev, default:
-                                15000,13000)
-
-  --identity IDENTITY           Sequencing identity distribution (mean,max,stdev for beta
-                                distribution or mean,stdev for normal qscore distribution,
+  --length LENGTH               Fragment length distribution (mean and stdev,
+                                default: 15000,13000)
+  --identity IDENTITY           Sequencing identity distribution
+                                (mean,max,stdev for beta distribution or
+                                mean,stdev for normal qscore distribution,
                                 default: 95,99,2.5)
-
-  --error_model ERROR_MODEL     Can be "nanopore2018", "nanopore2020", "nanopore2023",
-                                "pacbio2016", "pacbio2021", "random" or a model filename
+  --error_model ERROR_MODEL     Can be "nanopore2018", "nanopore2020",
+                                "nanopore2023", "pacbio2016", "pacbio2021",
+                                "random" or a model filename (default:
+                                nanopore2023)
+  --qscore_model QSCORE_MODEL   Can be "nanopore2018", "nanopore2020",
+                                "nanopore2023", "pacbio2016", "pacbio2021",
+                                "random", "ideal" or a model filename
                                 (default: nanopore2023)
-
-  --qscore_model QSCORE_MODEL   Can be "nanopore2018", "nanopore2020", "nanopore2023",
-                                "pacbio2016", "pacbio2021", "random", "ideal" or a model
-                                filename (default: nanopore2023)
-
-  --seed SEED                   Random number generator seed for deterministic output (default:
-                                different output each time)
+  --seed SEED                   Random number generator seed for deterministic
+                                output (default: different output each time)
 
 **Adapters:**
 
-  --start_adapter START_ADAPTER Adapter parameters for read starts (rate and amount, default:
-                                90,60)
-
-  --end_adapter END_ADAPTER     Adapter parameters for read ends (rate and amount, default:
-                                50,20)
-
+  --start_adapter START_ADAPTER
+                                Adapter parameters for read starts (rate and
+                                amount, default: 90,60)
+  --end_adapter END_ADAPTER     Adapter parameters for read ends (rate and
+                                amount, default: 50,20)
   --start_adapter_seq START_ADAPTER_SEQ
                                 Adapter sequence for read starts (default:
                                 AATGTACTTCGTTCAGTTACGTATTGCT)
-
   --end_adapter_seq END_ADAPTER_SEQ
                                 Adapter sequence for read ends (default:
                                 GCAATACGTAACTGAACGAAGT)
 
-
 **Problems:**
 
-  --junk_reads JUNK_READS       This percentage of reads will be low-complexity junk (default: 1)
-
-  --random_reads RANDOM_READS   This percentage of reads will be random sequence (default: 1)
-
-  --chimeras CHIMERAS           Percentage at which separate fragments join together (default: 1)
-
-  --glitches GLITCHES           Read glitch parameters (rate, size and skip, default:
-                                10000,25,25)
-
-  --small_plasmid_bias          If set, then small circular plasmids are lost when the fragment
-                                length is too high (default: small plasmids are included
-                                regardless of fragment length)
+  --junk_reads JUNK_READS       This percentage of reads will be
+                                low-complexity junk (default: 1)
+  --random_reads RANDOM_READS   This percentage of reads will be random
+                                sequence (default: 1)
+  --chimeras CHIMERAS           Percentage at which separate fragments join
+                                together (default: 1)
+  --glitches GLITCHES           Read glitch parameters (rate, size and skip,
+                                default: 10000,25,25)
+  --small_plasmid_bias          If set, then small circular plasmids are lost
+                                when the fragment length is too high (default:
+                                small plasmids are included regardless of
+                                fragment length)
 
     ]]></help>
 
