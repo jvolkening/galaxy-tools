@@ -1,6 +1,6 @@
 name: badread
 owner: jvolkening
-description: badread - long-read simulator
+description: Badread - long-read simulator
 homepage_url: https://github.com/rrwick/Badread
 long_description: >
     Badread is a long-read simulator tool that makes – you guessed it – bad
