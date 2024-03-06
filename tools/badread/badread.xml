@@ -1,0 +1,371 @@
+<tool id="badread" name="badread" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" python_template_version="3.5" profile="21.05">
+
+    <description>long-read simulator</description>
+    <macros>
+        <token name="@TOOL_VERSION@">0.4.1</token>
+        <token name="@VERSION_SUFFIX@">0</token>
+    </macros>
+    <edam_topics>
+        <edam_topic>topic_0080</edam_topic> <!-- Sequence analysis -->
+    </edam_topics>
+    <edam_operations>
+        <edam_operation>operation_2426</edam_operation> <!-- Modelling and simulation -->
+    </edam_operations>
+    <requirements>
+        <requirement type="package" version="@TOOL_VERSION@">badread</requirement>
+        <requirement type="package" version="2.8">pigz</requirement>
+    </requirements>
+    <version_command>badread --version | perl -wpe 's/Badread v//'</version_command>
+
+    <command detect_errors="aggressive"><![CDATA[
+        badread simulate 
+          --reference '${io.reference}'
+          --quantity '${sim.quantity}'
+          --length '${sim.length}'
+          --identity '${sim.identity}'
+          --error_model '${sim.error_model}'
+          --qscore_model '${sim.qscore_model}'
+          #if str($sim.seed.seed_bool) == "True":
+            --seed ${sim.seed.seed}
+          #end if
+          --start_adapter '${adapt.start_adapter}'
+          --end_adapter '${adapt.end_adapter}'
+          --start_adapter_seq '${adapt.start_adapter_seq}'
+          --end_adapter_seq '${adapt.end_adapter_seq}'
+          --junk_reads ${problems.junk_reads}
+          --random_reads ${problems.random_reads}
+          --chimera ${problems.chimera}
+          --glitches '${problems.glitches}'
+          $small_plasmid_bias
+          ${io.compress_output}
+        > $output
+    ]]></command>
+
+    <inputs>
+        <section name="io" title="Input/Output">
+            <param type="data"
+                argument="--reference"
+                format="fasta,fasta.gz"
+                label="Reference"
+                help="Reference file in FASTA format"/>
+            <param type="boolean"
+                name="compress_output"
+                checked="true"
+                truevalue="| pigz -p ${GALAXY_SLOTS:-1} --no-name --no-time"
+                falsevalue=""
+                label="Compress output" />
+        </section>
+        <section name="sim" title="Simulation parameters">
+            <param type="text"
+                optional="false"
+                argument="--quantity"
+                label="Quantity"
+                help="Absolute number of bp (e.g. '250M') or relative depth (e.g. '25x')">
+                <validator type="regex">^\d+(?i:[xkmg])?$</validator>
+                <validator type="empty_field" />
+            </param>
+            <param type="text"
+                argument="--length"
+                value="15000,13000"
+                label="Fragment length distribution"
+                help="'mean,stdev'">
+                <validator type="regex">^\d+,\d+$</validator>
+            </param>
+            <param type="text"
+                argument="--identity"
+                value="95,99,2.5"
+                label="Identity distribution"
+                help="'mean,max,stdev' for identity beta distribution, 'mean,stdev' for qscore normal distribution">
+                <validator type="regex">^[\d\.]+,[\d\.]+(,[\d\.]+)?$</validator>
+            </param>
+            <param type="select" argument="--error_model" label="Error model">
+                <option value="nanopore2018">nanopore2018</option>
+                <option value="nanopore2020">nanopore2020</option>
+                <option value="nanopore2023" selected="true">nanopore2023</option>
+                <option value="pacbio2016">pacbio2016</option>
+                <option value="pacbio2021">pacbio2021</option>
+                <option value="random">random</option>
+            </param>
+            <param type="select" argument="--qscore_model" label="Q-score model">
+                <option value="nanopore2018">nanopore2018</option>
+                <option value="nanopore2020">nanopore2020</option>
+                <option value="nanopore2023" selected="true">nanopore2023</option>
+                <option value="pacbio2016">pacbio2016</option>
+                <option value="pacbio2021">pacbio2021</option>
+                <option value="random">random</option>
+                <option value="ideal">ideal</option>
+            </param>
+            <conditional name="seed">
+                <param name="seed_bool" type="select" label="Fixed seed?">
+                    <option value="False" selected="true">No</option>
+                    <option value="True">Yes</option>
+                </param>
+                <when value="True">
+                    <param argument="--seed" type="integer" value="1234" label="Enter seed" />
+                </when>
+                <when value="False" />
+            </conditional>
+        </section>
+        <section name="adapt" title="Adapters">
+            <param type="text"
+                argument="--start_adapter"
+                value="90,60"
+                label="Start adapter"
+                help="'rate,amount'">
+                <validator type="regex">^\d+,\d+$</validator>
+            </param>
+            <param type="text"
+                argument="--end_adapter"
+                value="50,20"
+                label="End adapter"
+                help="'rate,amount'">
+                <validator type="regex">^\d+,\d+$</validator>
+            </param>
+            <param type="text"
+                argument="--start_adapter_seq"
+                value="AATGTACTTCGTTCAGTTACGTATTGCT"
+                label="Start adapter sequence">
+                <validator type="regex">^(?i:[ATGC]+)$</validator>
+            </param>
+            <param type="text"
+                argument="--end_adapter_seq"
+                value="GCAATACGTAACTGAACGAAGT"
+                label="End adapter sequence">
+                <validator type="regex">^(?i:[ATGC]+)$</validator>
+            </param>
+        </section>
+        <section name="problems" title="Problems">
+            <param type="float"
+                argument="--junk_reads"
+                value="1"
+                min="0"
+                max="100"
+                label="Percentage junk reads"
+                help="0-100" />
+            <param type="float"
+                argument="--random_reads"
+                value="1"
+                min="0"
+                max="100"
+                label="Percentage random reads"
+                help="0-100" />
+            <param type="float"
+                argument="--chimera"
+                value="1"
+                min="0"
+                max="50"
+                label="Percentage chimeric formation"
+                help="0-50" />
+            <param type="text"
+                argument="--glitches"
+                value="10000,25,25"
+                label="Read glitches"
+                help="'rate,size,skip'">
+                <validator type="regex">^\d+,\d+,\d+$</validator>
+            </param>
+            <param type="boolean"
+                argument="--small_plasmid_bias"
+                checked="false"
+                truevalue="--small_plasmid_bias"
+                falsevalue=""
+                label="Small plasmid bias"
+                help="Drop circular sequences smaller than fragment length" />
+        </section>
+    </inputs>
+
+    <outputs>
+        <data name="output" format="fastq.gz">
+            <change_format>
+                <when input="io.compress_output" value="" format="fastq" />
+            </change_format>
+        </data>
+    </outputs>
+
+    <tests>
+        <!-- defaults with seed -->
+        <test>
+            <param name="reference" value="ref.fa.gz" ftype="fasta.gz" />
+            <param name="seed_bool" value="True" />
+            <param name="seed" value="22" />
+            <param name="quantity" value="2x" />
+            <output name="output" file="2x.fq.gz" compare="diff" ftype="fastq.gz" decompress="true" />
+            <assert_command>
+                <has_text text="--seed 22" />
+            </assert_command>
+        </test>
+        <!-- defaults without seed -->
+        <test>
+            <param name="reference" value="ref.fa.gz" ftype="fasta.gz" />
+            <param name="quantity" value="2x" />
+            <assert_command>
+                <not_has_text text="--seed " />
+            </assert_command>
+        </test>
+        <!-- use absolute quanitity w/o compression-->
+        <test>
+            <param name="reference" value="ref.fa.gz" ftype="fasta.gz" />
+            <param name="seed_bool" value="True" />
+            <param name="seed" value="22" />
+            <param name="quantity" value="50k" />
+            <param name="compress_output" value="false" />
+            <output name="output" file="50k.fq.gz" compare="diff" ftype="fastq" decompress="true" />
+        </test>
+        <!-- set length dist-->
+        <test>
+            <param name="reference" value="ref.fa.gz" ftype="fasta.gz" />
+            <param name="seed_bool" value="True" />
+            <param name="seed" value="22" />
+            <param name="quantity" value="2x" />
+            <param name="length" value="2000,1000" />
+            <output name="output" file="2x.l2000_1000.fq.gz" compare="diff" decompress="true" />
+        </test>
+        <!-- set identity as beta dist-->
+        <test>
+            <param name="reference" value="ref.fa.gz" ftype="fasta.gz" />
+            <param name="seed_bool" value="True" />
+            <param name="seed" value="22" />
+            <param name="quantity" value="2x" />
+            <param name="identity" value="80,90,5" />
+            <output name="output" file="2x.i80_90_5.fq.gz" compare="diff" decompress="true" />
+            <assert_stderr>
+                <has_text text="identities from a beta distribution" />
+            </assert_stderr>
+        </test>
+        <!-- set identity as normal dist-->
+        <test>
+            <param name="reference" value="ref.fa.gz" ftype="fasta.gz" />
+            <param name="seed_bool" value="True" />
+            <param name="seed" value="22" />
+            <param name="quantity" value="2x" />
+            <param name="identity" value="80,5" />
+            <output name="output" file="2x.i80_5.fq.gz" compare="diff" decompress="true" />
+            <assert_stderr>
+                <has_text text="qscores from a normal distribution" />
+            </assert_stderr>
+        </test>
+        <!-- other models -->
+        <test>
+            <param name="reference" value="ref.fa.gz" ftype="fasta.gz" />
+            <param name="seed_bool" value="True" />
+            <param name="seed" value="22" />
+            <param name="quantity" value="2x" />
+            <param name="error_model" value="pacbio2021" />
+            <param name="qscore_model" value="pacbio2021" />
+            <output name="output" file="2x.em_pacbio2021.qm_pacbio2021.fq.gz" compare="diff" decompress="true" />
+        </test>
+        <!-- set non-default adapters-->
+        <test>
+            <param name="reference" value="ref.fa.gz" ftype="fasta.gz" />
+            <param name="seed_bool" value="True" />
+            <param name="seed" value="22" />
+            <param name="quantity" value="2x" />
+            <param name="start_adapter" value="50,30" />
+            <param name="start_adapter_seq" value="ATGC" />
+            <param name="end_adapter" value="80,40" />
+            <param name="end_adapter_seq" value="GCAT" />
+            <output name="output" file="2x.sa50_30_ATGC.ea80_40_GCAT.fq.gz" compare="diff" decompress="true" />
+        </test>
+        <!-- set problem parameters-->
+        <test>
+            <param name="reference" value="ref.fa.gz" ftype="fasta.gz" />
+            <param name="seed_bool" value="True" />
+            <param name="seed" value="22" />
+            <param name="quantity" value="2x" />
+            <param name="junk_reads" value="80" />
+            <param name="random_reads" value="9.5" />
+            <param name="chimera" value="5" />
+            <param name="glitches" value="2000,50,40" />
+            <output name="output" file="2x.j80.r9.5.c5.g2000_50_40.fq.gz" compare="diff" decompress="true" />
+        </test>
+        <!-- without and with small plasmid bias-->
+        <test>
+            <param name="reference" value="ref.fa.gz" ftype="fasta.gz" />
+            <param name="seed_bool" value="True" />
+            <param name="seed" value="22" />
+            <param name="quantity" value="1M" />
+            <output name="output" decompress="true">
+                <assert_contents>
+                    <has_text text="GU320569" />
+                </assert_contents>
+            </output>   
+        </test>
+        <test>
+            <param name="reference" value="ref.fa.gz" ftype="fasta.gz" />
+            <param name="seed_bool" value="True" />
+            <param name="seed" value="22" />
+            <param name="quantity" value="1M" />
+            <param name="small_plasmid_bias" value="true" />
+            <output name="output" decompress="true">
+                <assert_contents>
+                    <not_has_text text="GU320569" />
+                </assert_contents>
+            </output>   
+        </test>
+    </tests>
+
+    <help><![CDATA[
+**Required arguments:**
+
+  --reference REFERENCE         Reference FASTA file (can be gzipped)
+
+  --quantity QUANTITY           Either an absolute value (e.g. 250M) or a relative depth (e.g. 25x)
+
+**Simulation parameters:**
+
+  --length LENGTH               Fragment length distribution (mean and stdev, default:
+                                15000,13000)
+
+  --identity IDENTITY           Sequencing identity distribution (mean,max,stdev for beta
+                                distribution or mean,stdev for normal qscore distribution,
+                                default: 95,99,2.5)
+
+  --error_model ERROR_MODEL     Can be "nanopore2018", "nanopore2020", "nanopore2023",
+                                "pacbio2016", "pacbio2021", "random" or a model filename
+                                (default: nanopore2023)
+
+  --qscore_model QSCORE_MODEL   Can be "nanopore2018", "nanopore2020", "nanopore2023",
+                                "pacbio2016", "pacbio2021", "random", "ideal" or a model
+                                filename (default: nanopore2023)
+
+  --seed SEED                   Random number generator seed for deterministic output (default:
+                                different output each time)
+
+**Adapters:**
+
+  --start_adapter START_ADAPTER Adapter parameters for read starts (rate and amount, default:
+                                90,60)
+
+  --end_adapter END_ADAPTER     Adapter parameters for read ends (rate and amount, default:
+                                50,20)
+
+  --start_adapter_seq START_ADAPTER_SEQ
+                                Adapter sequence for read starts (default:
+                                AATGTACTTCGTTCAGTTACGTATTGCT)
+
+  --end_adapter_seq END_ADAPTER_SEQ
+                                Adapter sequence for read ends (default:
+                                GCAATACGTAACTGAACGAAGT)
+
+
+**Problems:**
+
+  --junk_reads JUNK_READS       This percentage of reads will be low-complexity junk (default: 1)
+
+  --random_reads RANDOM_READS   This percentage of reads will be random sequence (default: 1)
+
+  --chimeras CHIMERAS           Percentage at which separate fragments join together (default: 1)
+
+  --glitches GLITCHES           Read glitch parameters (rate, size and skip, default:
+                                10000,25,25)
+
+  --small_plasmid_bias          If set, then small circular plasmids are lost when the fragment
+                                length is too high (default: small plasmids are included
+                                regardless of fragment length)
+
+    ]]></help>
+
+    <citations>
+        <citation type="doi">10.21105/joss.01316</citation>
+    </citations>
+
+</tool>
