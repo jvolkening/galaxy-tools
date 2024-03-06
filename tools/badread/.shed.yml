@@ -1,0 +1,14 @@
+name: badread
+owner: jvolkening
+description: badread - long-read simulator
+homepage_url: https://github.com/rrwick/Badread
+long_description: >
+    Badread is a long-read simulator tool that makes – you guessed it – bad
+    reads! It can imitate many kinds of problems one might encounter in real
+    long-read sets -- chimeras, low-quality regions, systematic basecalling
+    errors and more.
+remote_repository_url: https://github.com/jvolkening/galaxy-tools/tree/master/tools/badread
+type: unrestricted
+categories:
+  - Sequence Analysis
+  - Nanopore
