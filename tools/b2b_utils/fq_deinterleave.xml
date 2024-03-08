@@ -1,10 +1,10 @@
-<tool id="b2b_@TOOL_NAME@" name="Interleave reads"
+<tool id="b2b_@TOOL_NAME@" name="De-interleave reads"
     version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" license="MIT" profile="21.01">
-    <description>Interleaved paired FASTQ files</description>
+    <description>De-interleave paired FASTQ files</description>
     <macros>
         <token name="@TOOL_NAME@">fq_deinterleave</token>
         <token name="@TOOL_VERSION@">0.202</token>
-        <token name="@VERSION_SUFFIX@">1</token>
+        <token name="@VERSION_SUFFIX@">2</token>
         <import>macros.xml</import>
     </macros>
     <edam_topics>
