@@ -1,0 +1,137 @@
+<tool id="b2b_@TOOL_NAME@" name="Interleave reads"
+    version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" license="MIT" profile="20.01">
+    <description>Interleaved paired FASTQ files</description>
+    <macros>
+        <token name="@TOOL_NAME@">fq_interleave</token>
+        <token name="@TOOL_VERSION@">0.202</token>
+        <token name="@VERSION_SUFFIX@">1</token>
+        <import>macros.xml</import>
+    </macros>
+    <edam_topics>
+        <edam_topic>topic_0080</edam_topic> <!-- Sequence analysis -->
+    </edam_topics>
+    <edam_operations>
+        <edam_operation>operation_0335</edam_operation> <!-- Formatting -->
+    </edam_operations>
+    <expand macro="requirements">
+        <expand macro="requirement_pigz" />
+    </expand>
+    <expand macro="version_command" />
+
+    <!-- ***************************************************************** -->
+
+    <command detect_errors="aggressive" strict="true">
+    <![CDATA[
+
+    set -o pipefail;
+
+    fq_interleave
+    --1 $input1
+    --2 $input2
+    $check
+    $rename
+    $compress_output
+    > $output
+
+    ]]>
+    </command>
+
+    <!-- ***************************************************************** -->
+
+    <inputs>
+        <param name="input1"
+            type="data"
+            format="fastqsanger,fastq,fastqsanger.gz,fastq.gz"
+            label="Forward reads"
+            help="Forward read FASTQ file" />
+        <param name="input2"
+            type="data"
+            format="fastqsanger,fastq,fastqsanger.gz,fastq.gz"
+            label="Reverse reads"
+            help="Reverse read FASTQ file" />
+        <param argument="--check"
+            type="boolean"
+            label="Check names"
+            checked="False"
+            truevalue="--check"
+            falsevalue=""
+            help="Verify that paired names match" />
+        <param argument="--rename"
+            type="boolean"
+            label="Rename"
+            checked="False"
+            truevalue="--rename"
+            falsevalue=""
+            help="Ensure /1 and /2 at end of read names" />
+        <param name="compress_output"
+            type="boolean"
+            checked="true"
+            truevalue="@PIPE_PIGZ@"
+            falsevalue=""
+            label="Compress output" />
+    </inputs>
+
+    <!-- ***************************************************************** -->
+
+    <outputs>
+        <data name="output" format="fastq.gz">
+            <change_format>
+                <when input="compress_output" value="" format="fastq" />
+            </change_format>
+        </data>
+    </outputs>
+
+    <!-- ***************************************************************** -->
+
+    <tests>
+
+        <!-- default options -->
+        <test expect_num_outputs="1">
+            <param name="input1" value="test_R1.sync.fq" ftype="fastq" />
+            <param name="input2" value="test_R2.sync.fq" ftype="fastq" />
+            <output name="output" file="test.il.fq" compare="diff" ftype="fastq.gz" decompress="true"/>
+            <assert_command>
+                <not_has_text text="--check " />
+                <not_has_text text="--rename " />
+            </assert_command>
+        </test>
+        <!-- mismatched inputs -->
+        <test expect_failure="true">
+            <param name="input1" value="test_R1.fq" ftype="fastq" />
+            <param name="input2" value="test_R2.fq" ftype="fastq" />
+            <param name="check" value="true" />
+        </test>
+        <!-- other options -->
+        <test expect_num_outputs="1">
+            <param name="input1" value="test_R1.sync.fq" ftype="fastq" />
+            <param name="input2" value="test_R2.sync.fq" ftype="fastq" />
+            <param name="check" value="true" />
+            <param name="rename" value="true" />
+            <param name="compress_output" value="false" />
+            <output name="output" file="test.il.fq" compare="diff" ftype="fastq" />
+            <assert_command>
+                <has_text text="--check" />
+                <has_text text="--rename" />
+            </assert_command>
+        </test>
+
+    </tests>
+
+    <!-- ***************************************************************** -->
+
+    <help>
+
+    sync_reads is a utility from b2b-utils for synchronizing a pair of forward and
+    reverse FASTQ read files. It will output a new pair of files containing only
+    read pairs found in both input files. It can optionally output singletons from
+    each input file as well.
+
+    </help>
+
+    <!-- ***************************************************************** -->
+
+    <citations>
+    </citations>
+
+</tool>
+
