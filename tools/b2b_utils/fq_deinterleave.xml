@@ -1,5 +1,5 @@
 <tool id="b2b_@TOOL_NAME@" name="Interleave reads"
-    version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" license="MIT" profile="20.01">
+    version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" license="MIT" profile="21.01">
     <description>Interleaved paired FASTQ files</description>
     <macros>
         <token name="@TOOL_NAME@">fq_deinterleave</token>
@@ -18,7 +18,7 @@
 
     <!-- ***************************************************************** -->
 
-    <command detect_errors="aggressive" strict="true">
+    <command detect_errors="aggressive">
     <![CDATA[
 
     fq_deinterleave

@@ -1,16 +1,18 @@
-<tool id="b2b_bam2consensus" name="BAM to consensus" version="0.004">
+<tool id="b2b_bam2consensus" name="BAM to consensus"
+    version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" license="MIT" profile="21.01">
 
     <description>Re-call consensus based on BAM mapping</description>
-
-    <!-- ***************************************************************** -->
-
-    <requirements>
-        <requirement type="package" version="0.019">b2b-utils</requirement>
-    </requirements>
-
-    <!-- ***************************************************************** -->
-
-    <version_command>bam2consensus --version | perl -wnE'print "$1\n" for /bam2consensus v(.+)/g'</version_command>
+    <macros>
+        <token name="@TOOL_NAME@">bam2consensus</token>
+        <token name="@TOOL_VERSION@">0.004</token>
+        <token name="@VERSION_SUFFIX@">1</token>
+        <import>macros.xml</import>
+    </macros>
+    <edam_topics>
+        <edam_topic>topic_0080</edam_topic> <!-- Sequence analysis -->
+    </edam_topics>
+    <expand macro="requirements" />
+    <expand macro="version_command" />
 
     <!-- ***************************************************************** -->
 

@@ -1,16 +1,21 @@
-<tool id="b2b_sync_reads" name="Sync paired reads" version="0.005">
+<tool id="b2b_sync_reads" name="Sync paired reads"
+    version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" license="MIT" profile="21.01">
 
     <description>Synchronize trimmed/filtered read-pair set</description>
-
-    <!-- ***************************************************************** -->
-
-    <requirements>
-        <requirement type="package" version="0.019">b2b-utils</requirement>
-    </requirements>
-
-    <!-- ***************************************************************** -->
-
-    <version_command>sync_reads --version | perl -wnE'print "$1\n" for /sync_reads v(.+)/g'</version_command>
+    <macros>
+        <token name="@TOOL_NAME@">sync_reads</token>
+        <token name="@TOOL_VERSION@">0.005</token>
+        <token name="@VERSION_SUFFIX@">1</token>
+        <import>macros.xml</import>
+    </macros>
+    <edam_topics>
+        <edam_topic>topic_0080</edam_topic> <!-- Sequence analysis -->
+    </edam_topics>
+    <edam_operations>
+        <edam_operation>operation_0335</edam_operation> <!-- Formatting -->
+    </edam_operations>
+    <expand macro="requirements" />
+    <expand macro="version_command" />
 
     <!-- ***************************************************************** -->
 

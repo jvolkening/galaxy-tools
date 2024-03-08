@@ -1,16 +1,18 @@
-<tool id="b2b_summarize_assembly" name="Summarize assembly" version="0.02">
+<tool id="b2b_summarize_assembly" name="Summarize assembly"
+    version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" license="MIT" profile="21.01">
 
     <description>Calculate and print basic assembly summary stats</description>
-
-    <!-- ***************************************************************** -->
-
-    <requirements>
-        <requirement type="package" version="0.019">b2b-utils</requirement>
-    </requirements>
-
-    <!-- ***************************************************************** -->
-
-    <version_command>summarize_assembly --version | perl -wnE'print "$1\n" for /summarize_assembly v(.+)/g'</version_command>
+    <macros>
+        <token name="@TOOL_NAME@">summarize_assembly</token>
+        <token name="@TOOL_VERSION@">0.02</token>
+        <token name="@VERSION_SUFFIX@">1</token>
+        <import>macros.xml</import>
+    </macros>
+    <edam_topics>
+        <edam_topic>topic_0080</edam_topic> <!-- Sequence analysis -->
+    </edam_topics>
+    <expand macro="requirements" />
+    <expand macro="version_command" />
 
     <!-- ***************************************************************** -->
 
